@@ -173,7 +173,7 @@ export interface ReviewWithDetails extends Review {
   professional: Profile;
 }
 
-export interface NotificationWithDetails extends Notification {}
+export type NotificationWithDetails = Notification;
 
 // ============================================================
 // Form / Input Types

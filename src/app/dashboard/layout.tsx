@@ -1,0 +1,177 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import {
+  LayoutDashboard,
+  ClipboardList,
+  Heart,
+  Star,
+  Bell,
+  Settings,
+  LogOut,
+  Menu,
+  X,
+  Search,
+  ExternalLink,
+} from "lucide-react";
+import { Logo } from "@/components/ui/logo";
+import { Avatar } from "@/components/ui/avatar";
+import { cn } from "@/lib/utils";
+import { createClient } from "@/lib/supabase/client";
+
+const navItems = [
+  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/requests", label: "My Requests", icon: ClipboardList },
+  { href: "/dashboard/favorites", label: "Saved Pros", icon: Heart },
+  { href: "/dashboard/reviews", label: "My Reviews", icon: Star },
+  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+  { href: "/dashboard/settings", label: "Settings", icon: Settings },
+];
+
+export default function CustomerDashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const supabase = createClient();
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    router.push("/");
+  };
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col md:flex-row">
+      {/* Mobile Top Bar */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-border sticky top-0 z-40">
+        <Logo />
+        <button
+          onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-input-bg"
+          aria-label="Toggle navigation"
+        >
+          {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {/* Sidebar Navigation */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-border flex flex-col transition-transform duration-200 md:static md:translate-x-0",
+          mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Brand Header */}
+        <div className="p-6 border-b border-border flex items-center justify-between">
+          <Logo />
+          <button
+            onClick={() => setMobileMenuOpen(false)}
+            className="md:hidden text-text-muted hover:text-text"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        {/* Role Pill */}
+        <div className="px-6 py-3 bg-navy-light/5 border-b border-border">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-text-muted">
+            Customer Account
+          </span>
+        </div>
+
+        {/* Navigation Items */}
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive =
+              item.href === "/dashboard"
+                ? pathname === "/dashboard"
+                : pathname.startsWith(item.href);
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className={cn(
+                  "flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  isActive
+                    ? "bg-primary text-white shadow-sm"
+                    : "text-text-secondary hover:text-text hover:bg-input-bg"
+                )}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+        {/* Find a Pro shortcut */}
+        <div className="p-4 border-t border-border">
+          <Link
+            href="/professionals"
+            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-primary-light text-primary text-xs font-semibold hover:bg-primary/20 transition-colors"
+          >
+            <span className="flex items-center gap-2">
+              <Search className="h-3.5 w-3.5" />
+              Find a Professional
+            </span>
+            <ExternalLink className="h-3 w-3" />
+          </Link>
+        </div>
+
+        {/* Footer with sign out */}
+        <div className="p-4 border-t border-border">
+          <button
+            onClick={handleSignOut}
+            className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-error hover:bg-error-light/60 transition-colors"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Top Header */}
+        <header className="hidden md:flex h-16 items-center justify-between px-8 bg-white border-b border-border sticky top-0 z-30">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-text">Customer Portal</h2>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/dashboard/notifications"
+              className="relative p-2 text-text-muted hover:text-text hover:bg-input-bg rounded-lg transition-colors"
+              aria-label="Notifications"
+            >
+              <Bell className="h-5 w-5" />
+              <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
+            </Link>
+
+            <Link href="/dashboard/settings" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+              <Avatar
+                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80"
+                alt="Sarah Miller"
+                size="sm"
+              />
+              <span className="text-sm font-semibold text-text">Sarah Miller</span>
+            </Link>
+          </div>
+        </header>
+
+        {/* Page Content */}
+        <main className="flex-1 p-4 sm:p-6 md:p-8 overflow-y-auto">
+          {children}
+        </main>
+      </div>
+    </div>
+  );
+}
