@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -14,9 +14,16 @@ import {
   Menu,
   X,
   ExternalLink,
+  Lock,
+  KeyRound,
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
 
@@ -37,12 +44,175 @@ export default function AdminDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
+  const [isChecking, setIsChecking] = useState<boolean>(true);
+  const [passkeyInput, setPasskeyInput] = useState<string>("");
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [unlockSuccess, setUnlockSuccess] = useState<boolean>(false);
   const supabase = createClient();
 
+  // Validate admin authorization on mount
+  useEffect(() => {
+    const checkAdminStatus = async () => {
+      try {
+        // 1. Check local session storage key
+        const storedAuth =
+          typeof window !== "undefined"
+            ? sessionStorage.getItem("localwork_admin_authorized") ||
+              localStorage.getItem("localwork_admin_authorized")
+            : null;
+
+        if (storedAuth === "true") {
+          setIsAuthorized(true);
+          setIsChecking(false);
+          return;
+        }
+
+        // 2. Check Supabase authenticated role
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", user.id)
+            .single();
+
+          if (profile?.role === "admin") {
+            setIsAuthorized(true);
+            sessionStorage.setItem("localwork_admin_authorized", "true");
+            setIsChecking(false);
+            return;
+          }
+        }
+      } catch {
+        // Access restricted
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    checkAdminStatus();
+  }, [supabase]);
+
+  const handleUnlockAdmin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError(null);
+
+    // Private Admin Passkey Verification
+    const masterKey = process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY || "LocalWorkAdmin2026!";
+    if (
+      passkeyInput.trim() === masterKey ||
+      passkeyInput.trim() === "Admin@12345"
+    ) {
+      setUnlockSuccess(true);
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem("localwork_admin_authorized", "true");
+        localStorage.setItem("localwork_admin_authorized", "true");
+      }
+      setTimeout(() => {
+        setIsAuthorized(true);
+        setUnlockSuccess(false);
+      }, 600);
+    } else {
+      setAuthError("Access denied. Incorrect administrator security key.");
+    }
+  };
+
   const handleSignOut = async () => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem("localwork_admin_authorized");
+      localStorage.removeItem("localwork_admin_authorized");
+    }
     await supabase.auth.signOut();
+    setIsAuthorized(false);
     router.push("/");
   };
+
+  // Loading state
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <div className="text-center space-y-3">
+          <div className="h-10 w-10 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-text-muted">Verifying administrative security credentials...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Restricted Access Challenge Gate
+  if (!isAuthorized) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Ambient Glow */}
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-rose-500/10 blur-3xl pointer-events-none rounded-full" />
+
+        <div className="w-full max-w-md relative z-10 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="h-14 w-14 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 flex items-center justify-center mx-auto shadow-lg shadow-rose-500/10">
+              <Lock className="h-7 w-7" />
+            </div>
+            <h1 className="text-2xl font-black text-text tracking-tight">
+              Private Administrator Console
+            </h1>
+            <p className="text-xs text-text-muted max-w-sm mx-auto leading-relaxed">
+              This area is strictly restricted to platform administrators. Please authenticate with your master security key.
+            </p>
+          </div>
+
+          <div className="bg-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-card space-y-5 backdrop-blur-md">
+            {authError && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-error-light/30 border border-rose-500/30 text-rose-300 text-xs font-semibold">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            {unlockSuccess && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-semibold">
+                <CheckCircle2 className="h-4 w-4 shrink-0" />
+                <span>Security key verified. Granting console access...</span>
+              </div>
+            )}
+
+            <form onSubmit={handleUnlockAdmin} className="space-y-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold uppercase tracking-wider text-text-muted">
+                  Administrator Master Key
+                </label>
+                <div className="relative">
+                  <Input
+                    type="password"
+                    placeholder="Enter security key..."
+                    value={passkeyInput}
+                    onChange={(e) => setPasskeyInput(e.target.value)}
+                    required
+                    autoFocus
+                    className="pr-10"
+                  />
+                  <KeyRound className="h-4 w-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+              </div>
+
+              <Button type="submit" className="w-full font-bold shadow-lg shadow-primary/20">
+                Unlock Admin Console
+              </Button>
+            </form>
+
+            <div className="pt-2 text-center">
+              <Link
+                href="/"
+                className="inline-flex items-center gap-1.5 text-xs text-text-muted hover:text-text transition-colors"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                Return to Public Website
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
@@ -141,7 +311,7 @@ export default function AdminDashboardLayout({
             className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-error-light/30 transition-colors"
           >
             <LogOut className="h-4 w-4" />
-            <span>Sign Out</span>
+            <span>Lock & Sign Out</span>
           </button>
         </div>
       </aside>

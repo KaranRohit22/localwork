@@ -64,6 +64,7 @@ export default function ProfessionalPortfolioPage() {
               className="group bg-white rounded-2xl border border-border overflow-hidden shadow-card flex flex-col justify-between"
             >
               <div className="aspect-video relative bg-input-bg overflow-hidden">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={item.image_url}
                   alt={item.caption || "Portfolio item"}
@@ -120,6 +121,7 @@ export default function ProfessionalPortfolioPage() {
 
           {imageUrl && (
             <div className="aspect-video rounded-xl overflow-hidden border border-border bg-input-bg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageUrl}
                 alt="Preview"

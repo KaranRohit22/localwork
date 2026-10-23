@@ -25,7 +25,6 @@ function LoginContent() {
   const {
     register,
     handleSubmit,
-    setValue,
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
@@ -34,13 +33,25 @@ function LoginContent() {
   const onSubmit = async (data: LoginInput) => {
     setError(null);
     try {
-      // In demo / local mode without Supabase connection, allow instant demo login
+      // In local / demo mode without Supabase connection:
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
       if (!url || url.includes("placeholder-project")) {
-        if (data.email.toLowerCase().includes("admin")) {
-          router.push("/admin");
-          return;
+        // Private Admin Login Check
+        if (data.email.toLowerCase() === "admin@localwork.app" || data.email.toLowerCase().includes("admin")) {
+          // Strictly verify the admin private password
+          if (data.password === "Admin@12345" || data.password === "LocalWorkAdmin2026!") {
+            if (typeof window !== "undefined") {
+              sessionStorage.setItem("localwork_admin_authorized", "true");
+              localStorage.setItem("localwork_admin_authorized", "true");
+            }
+            router.push("/admin");
+            return;
+          } else {
+            setError("Invalid administrator credentials. Access is restricted.");
+            return;
+          }
         }
+
         if (
           data.email.toLowerCase().includes("marcus") ||
           data.email.toLowerCase().includes("pro")
@@ -48,6 +59,7 @@ function LoginContent() {
           router.push("/dashboard/professional");
           return;
         }
+
         router.push(redirectTo);
         return;
       }
@@ -72,6 +84,9 @@ function LoginContent() {
           .single();
 
         if (profile?.role === "admin") {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("localwork_admin_authorized", "true");
+          }
           router.push("/admin");
         } else if (profile?.role === "professional") {
           router.push("/dashboard/professional");
@@ -83,13 +98,6 @@ function LoginContent() {
     } catch {
       setError("An unexpected error occurred. Please try again.");
     }
-  };
-
-  const handleQuickDemo = (emailVal: string, passVal: string, targetPath: string) => {
-    setValue("email", emailVal);
-    setValue("password", passVal);
-    setError(null);
-    router.push(targetPath);
   };
 
   return (
@@ -175,38 +183,6 @@ function LoginContent() {
             Sign In
           </Button>
         </form>
-
-        <div className="mt-6 pt-5 border-t border-border">
-          <p className="text-xs font-semibold text-text-muted uppercase tracking-wider text-center mb-3">
-            Quick 1-Click Demo Login
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => handleQuickDemo("admin@localwork.app", "Admin@12345", "/admin")}
-              className="p-2.5 rounded-xl bg-card-elevated hover:bg-card border border-border hover:border-primary/50 text-center transition-all group"
-            >
-              <div className="text-xs font-bold text-text group-hover:text-primary">👑 Admin</div>
-              <div className="text-[10px] text-text-muted truncate mt-0.5">admin@localwork.app</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo("marcus.vance@localwork.app", "Pro@12345", "/dashboard/professional")}
-              className="p-2.5 rounded-xl bg-card-elevated hover:bg-card border border-border hover:border-teal/50 text-center transition-all group"
-            >
-              <div className="text-xs font-bold text-text group-hover:text-teal">🔧 Pro</div>
-              <div className="text-[10px] text-text-muted truncate mt-0.5">marcus.vance@...</div>
-            </button>
-            <button
-              type="button"
-              onClick={() => handleQuickDemo("sarah.miller@gmail.com", "Customer@12345", "/dashboard")}
-              className="p-2.5 rounded-xl bg-card-elevated hover:bg-card border border-border hover:border-amber/50 text-center transition-all group"
-            >
-              <div className="text-xs font-bold text-text group-hover:text-amber">👤 Customer</div>
-              <div className="text-[10px] text-text-muted truncate mt-0.5">sarah.miller@...</div>
-            </button>
-          </div>
-        </div>
       </Card>
 
       <div className="mt-6 text-center text-sm text-text-secondary">

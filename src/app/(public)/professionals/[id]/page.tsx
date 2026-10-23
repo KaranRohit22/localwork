@@ -276,6 +276,7 @@ function ProfessionalProfileContent({ params }: PageProps) {
                       key={img.id}
                       className="group relative rounded-xl overflow-hidden border border-border bg-input-bg aspect-video"
                     >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={img.image_url}
                         alt={img.caption || "Portfolio item"}
