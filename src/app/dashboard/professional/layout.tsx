@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  User,
   Inbox,
   UserCheck,
   Image as ImageIcon,
@@ -23,6 +24,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const proNavItems = [
   { href: "/dashboard/professional", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/profile", label: "My Profile & Activity", icon: User },
   { href: "/dashboard/professional/requests", label: "Job Inquiries", icon: Inbox },
   { href: "/dashboard/professional/profile", label: "Business Profile", icon: UserCheck },
   { href: "/dashboard/professional/portfolio", label: "Portfolio", icon: ImageIcon },

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
+  User,
   ClipboardList,
   Heart,
   Star,
@@ -23,6 +24,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard/profile", label: "My Profile & Activity", icon: User },
   { href: "/dashboard/requests", label: "My Requests", icon: ClipboardList },
   { href: "/dashboard/favorites", label: "Saved Pros", icon: Heart },
   { href: "/dashboard/reviews", label: "My Reviews", icon: Star },

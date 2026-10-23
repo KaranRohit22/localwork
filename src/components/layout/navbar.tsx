@@ -9,6 +9,7 @@ import {
   Search,
   Bell,
   User,
+  Settings,
   LogOut,
   LayoutDashboard,
   ChevronDown,
@@ -193,6 +194,13 @@ export function Navbar() {
                             </p>
                           </div>
                           <Link
+                            href="/dashboard/profile"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-white hover:bg-card-elevated transition-colors"
+                          >
+                            <User className="h-4 w-4 text-primary" />
+                            My Profile & Activity
+                          </Link>
+                          <Link
                             href={dashboardLink}
                             className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-white hover:bg-card-elevated transition-colors"
                           >
@@ -203,7 +211,7 @@ export function Navbar() {
                             href={`${dashboardLink}/settings`}
                             className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-white hover:bg-card-elevated transition-colors"
                           >
-                            <User className="h-4 w-4" />
+                            <Settings className="h-4 w-4" />
                             Account Settings
                           </Link>
                           <div className="border-t border-border my-1" />
