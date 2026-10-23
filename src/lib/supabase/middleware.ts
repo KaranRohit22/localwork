@@ -6,10 +6,16 @@ export async function updateSession(request: NextRequest) {
     request,
   });
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  // In demo / mock mode or if Supabase env vars are not set on Vercel, pass through safely
+  if (!url || !key || url.includes("placeholder-project")) {
+    return supabaseResponse;
+  }
+
+  try {
+    const supabase = createServerClient(url, key, {
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -26,43 +32,44 @@ export async function updateSession(request: NextRequest) {
           );
         },
       },
+    });
+
+    // Refresh session if expired
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    // Protected routes
+    const protectedPaths = ["/dashboard", "/admin"];
+    const isProtected = protectedPaths.some((path) =>
+      request.nextUrl.pathname.startsWith(path)
+    );
+
+    if (isProtected && !user) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
+      redirectUrl.searchParams.set("redirect", request.nextUrl.pathname);
+      return NextResponse.redirect(redirectUrl);
     }
-  );
 
-  // Refresh session if expired
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+    // Admin routes
+    if (request.nextUrl.pathname.startsWith("/admin") && user) {
+      // Check admin role via profile in the layout
+    }
 
-  // Protected routes
-  const protectedPaths = ["/dashboard", "/admin"];
-  const isProtected = protectedPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
+    // Auth pages redirect if already logged in
+    const authPaths = ["/login", "/register"];
+    const isAuthPage = authPaths.some((path) =>
+      request.nextUrl.pathname.startsWith(path)
+    );
 
-  if (isProtected && !user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/login";
-    url.searchParams.set("redirect", request.nextUrl.pathname);
-    return NextResponse.redirect(url);
-  }
-
-  // Admin routes
-  if (request.nextUrl.pathname.startsWith("/admin") && user) {
-    // We'll check admin role via profile in the layout
-    // Middleware just ensures authentication
-  }
-
-  // Auth pages redirect if already logged in
-  const authPaths = ["/login", "/register"];
-  const isAuthPage = authPaths.some((path) =>
-    request.nextUrl.pathname.startsWith(path)
-  );
-
-  if (isAuthPage && user) {
-    const url = request.nextUrl.clone();
-    url.pathname = "/dashboard";
-    return NextResponse.redirect(url);
+    if (isAuthPage && user) {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/dashboard";
+      return NextResponse.redirect(redirectUrl);
+    }
+  } catch (err) {
+    console.error("Supabase middleware error:", err);
   }
 
   return supabaseResponse;
