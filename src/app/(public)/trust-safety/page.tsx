@@ -102,16 +102,19 @@ export default function TrustSafetyPage() {
         </div>
 
         {/* Report / Help banner */}
-        <div className="bg-navy rounded-3xl p-8 text-center text-white">
-          <h3 className="text-xl font-bold mb-2">Have a Trust or Safety Concern?</h3>
-          <p className="text-white/70 text-sm max-w-xl mx-auto mb-6">
-            If you ever encounter suspicious behavior, report the profile directly or contact our safety team immediately.
-          </p>
-          <Link href="/contact">
-            <Button size="lg" className="font-semibold">
-              Contact Safety Support
-            </Button>
-          </Link>
+        <div className="relative overflow-hidden rounded-3xl p-8 md:p-12 text-center bg-gradient-to-r from-card via-card-elevated to-card border border-primary/30 shadow-2xl shadow-primary/10">
+          <div className="absolute -top-12 left-1/2 -translate-x-1/2 w-72 h-32 bg-primary/20 blur-3xl rounded-full pointer-events-none" />
+          <div className="relative z-10">
+            <h3 className="text-2xl font-bold text-text mb-2">Have a Trust or Safety Concern?</h3>
+            <p className="text-text-muted text-sm max-w-xl mx-auto mb-6 leading-relaxed">
+              If you ever encounter suspicious behavior, report the profile directly or contact our safety team immediately.
+            </p>
+            <Link href="/contact">
+              <Button size="lg" className="font-semibold px-8 shadow-lg shadow-primary/25">
+                Contact Safety Support
+              </Button>
+            </Link>
+          </div>
         </div>
       </div>
     </div>

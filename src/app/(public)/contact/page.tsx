@@ -36,44 +36,45 @@ export default function ContactPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
           {/* Contact Details */}
-          <div className="lg:col-span-5 bg-navy text-white rounded-3xl p-8 space-y-8">
-            <div>
-              <h2 className="text-2xl font-bold">Contact Details</h2>
-              <p className="text-sm text-white/70 mt-1">
+          <div className="lg:col-span-5 bg-card-elevated border border-border/80 text-text rounded-3xl p-8 space-y-8 shadow-card relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-48 h-48 bg-primary/10 blur-3xl rounded-full pointer-events-none" />
+            <div className="relative z-10">
+              <h2 className="text-2xl font-bold text-text">Contact Details</h2>
+              <p className="text-sm text-text-muted mt-1">
                 Reach out to us directly through any of our official channels.
               </p>
             </div>
 
             <div className="space-y-6 text-sm">
               <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-xl bg-teal/15 border border-teal/25 flex items-center justify-center shrink-0">
                   <Mail className="h-5 w-5 text-teal" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-white">Email Support</h4>
-                  <p className="text-white/60 text-xs mt-0.5">support@localwork.app</p>
-                  <p className="text-white/60 text-xs">partnerships@localwork.app</p>
+                  <h4 className="font-semibold text-text">Email Support</h4>
+                  <p className="text-text-muted text-xs mt-0.5">support@localwork.app</p>
+                  <p className="text-text-muted text-xs">partnerships@localwork.app</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-xl bg-primary/15 border border-primary/25 flex items-center justify-center shrink-0">
                   <Phone className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-white">Telephone</h4>
-                  <p className="text-white/60 text-xs mt-0.5">+1 (555) 123-4567</p>
-                  <p className="text-white/40 text-[11px]">Mon-Fri: 8am - 6pm PST</p>
+                  <h4 className="font-semibold text-text">Telephone</h4>
+                  <p className="text-text-muted text-xs mt-0.5">+1 (555) 123-4567</p>
+                  <p className="text-text-muted/70 text-[11px]">Mon-Fri: 8am - 6pm PST</p>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
-                <div className="h-10 w-10 rounded-xl bg-white/10 flex items-center justify-center shrink-0">
+                <div className="h-10 w-10 rounded-xl bg-amber/15 border border-amber/25 flex items-center justify-center shrink-0">
                   <MapPin className="h-5 w-5 text-amber" />
                 </div>
                 <div>
-                  <h4 className="font-semibold text-white">Headquarters</h4>
-                  <p className="text-white/60 text-xs mt-0.5">
+                  <h4 className="font-semibold text-text">Headquarters</h4>
+                  <p className="text-text-muted text-xs mt-0.5">
                     1201 3rd Ave, Suite 2200<br />
                     Seattle, WA 98101
                   </p>
@@ -81,7 +82,7 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div className="pt-6 border-t border-white/10 text-xs text-white/60">
+            <div className="pt-6 border-t border-border text-xs text-text-muted">
               Expected email response time is under 4 business hours.
             </div>
           </div>

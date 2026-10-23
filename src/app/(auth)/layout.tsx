@@ -9,7 +9,7 @@ export default function AuthLayout({
 }) {
   return (
     <>
-      <Suspense fallback={<div className="h-16 bg-white border-b border-border" />}>
+      <Suspense fallback={<div className="h-16 bg-background border-b border-border" />}>
         <Navbar />
       </Suspense>
       <main className="flex-1 flex items-center justify-center py-12 px-4 bg-background">

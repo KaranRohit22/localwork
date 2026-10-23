@@ -116,7 +116,7 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-border shadow-card flex flex-col md:flex-row items-center justify-between gap-4">
+      <div className="bg-card rounded-2xl p-4 border border-border shadow-card flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="relative w-full md:w-80">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
           <Input
@@ -131,7 +131,7 @@ export default function AdminUsersPage() {
           <select
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value as "all" | UserRole)}
-            className="py-2 px-3 rounded-lg border border-border text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="py-2 px-3 rounded-xl border border-border text-xs sm:text-sm bg-input-bg text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="all">All Roles</option>
             <option value="customer">Customers</option>
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "suspended")}
-            className="py-2 px-3 rounded-lg border border-border text-xs sm:text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20"
+            className="py-2 px-3 rounded-xl border border-border text-xs sm:text-sm bg-input-bg text-text focus:outline-none focus:ring-2 focus:ring-primary/40"
           >
             <option value="all">All Statuses</option>
             <option value="active">Active Only</option>
@@ -152,10 +152,10 @@ export default function AdminUsersPage() {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-2xl border border-border shadow-card overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border shadow-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-sm">
-            <thead className="bg-slate-50 border-b border-border text-xs font-semibold uppercase tracking-wider text-text-muted">
+            <thead className="bg-card-elevated/70 border-b border-border text-xs font-semibold uppercase tracking-wider text-text-muted">
               <tr>
                 <th className="py-3.5 px-6">User</th>
                 <th className="py-3.5 px-6">Role</th>
@@ -166,7 +166,7 @@ export default function AdminUsersPage() {
             </thead>
             <tbody className="divide-y divide-border">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-50/50 transition-colors">
+                <tr key={user.id} className="hover:bg-card-elevated/50 transition-colors">
                   <td className="py-4 px-6">
                     <div className="flex items-center gap-3">
                       <Avatar src={user.avatar_url} alt={user.full_name} size="md" />
@@ -178,17 +178,17 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="py-4 px-6">
                     {user.role === "admin" && (
-                      <span className="text-xs font-bold text-red-600 bg-red-50 px-2.5 py-1 rounded-full">
+                      <span className="text-xs font-bold text-rose-300 bg-rose-500/20 border border-rose-500/30 px-2.5 py-1 rounded-full">
                         Admin
                       </span>
                     )}
                     {user.role === "professional" && (
-                      <span className="text-xs font-semibold text-primary bg-primary-light px-2.5 py-1 rounded-full">
+                      <span className="text-xs font-semibold text-indigo-300 bg-primary/20 border border-primary/30 px-2.5 py-1 rounded-full">
                         Professional
                       </span>
                     )}
                     {user.role === "customer" && (
-                      <span className="text-xs font-medium text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full">
+                      <span className="text-xs font-medium text-slate-300 bg-card-elevated border border-border px-2.5 py-1 rounded-full">
                         Customer
                       </span>
                     )}

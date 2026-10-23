@@ -117,7 +117,7 @@ function ProfessionalsContent() {
         </div>
 
         {/* Top Search & Filter Bar */}
-        <div className="bg-white rounded-2xl p-4 shadow-card border border-border mb-8">
+        <div className="bg-card rounded-2xl p-4 shadow-card border border-border mb-8">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
             <div className="md:col-span-5 relative">
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />
@@ -126,7 +126,7 @@ function ProfessionalsContent() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search by skill, service, or name (e.g. EV charger, plumber)..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border text-sm bg-input-bg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
 
@@ -137,7 +137,7 @@ function ProfessionalsContent() {
                 value={cityFilter}
                 onChange={(e) => setCityFilter(e.target.value)}
                 placeholder="City or neighborhood (e.g. Seattle, Portland)..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-border text-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-border text-sm bg-input-bg text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               />
             </div>
 
@@ -157,7 +157,7 @@ function ProfessionalsContent() {
                     e.target.value as "rating" | "experience" | "rate_asc" | "rate_desc"
                   )
                 }
-                className="w-full py-2.5 px-3 rounded-lg border border-border text-sm bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                className="w-full py-2.5 px-3 rounded-xl border border-border text-sm bg-input-bg text-text focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
               >
                 <option value="rating">Highest Rated</option>
                 <option value="experience">Most Experienced</option>
@@ -171,10 +171,10 @@ function ProfessionalsContent() {
           <div className="flex items-center gap-2 overflow-x-auto pt-4 mt-3 border-t border-border/60 scrollbar-none">
             <button
               onClick={() => setSelectedCategory("")}
-              className={`text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap transition-colors ${
+              className={`text-xs font-medium px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all ${
                 selectedCategory === ""
-                  ? "bg-primary text-white"
-                  : "bg-input-bg text-text-secondary hover:text-text hover:bg-border"
+                  ? "bg-gradient-to-r from-primary to-teal text-white shadow-sm shadow-primary/25 font-semibold"
+                  : "bg-card-elevated text-text-secondary hover:text-white hover:bg-card-elevated/80 border border-border"
               }`}
             >
               All Categories
@@ -185,10 +185,10 @@ function ProfessionalsContent() {
                 onClick={() =>
                   setSelectedCategory(selectedCategory === cat.slug ? "" : cat.slug)
                 }
-                className={`text-xs font-medium px-3 py-1.5 rounded-full whitespace-nowrap transition-colors ${
+                className={`text-xs font-medium px-3.5 py-1.5 rounded-full whitespace-nowrap transition-all ${
                   selectedCategory === cat.slug
-                    ? "bg-primary text-white"
-                    : "bg-input-bg text-text-secondary hover:text-text hover:bg-border"
+                    ? "bg-gradient-to-r from-primary to-teal text-white shadow-sm shadow-primary/25 font-semibold"
+                    : "bg-card-elevated text-text-secondary hover:text-white hover:bg-card-elevated/80 border border-border"
                 }`}
               >
                 {cat.name}
@@ -205,7 +205,7 @@ function ProfessionalsContent() {
               showMobileFilters ? "block" : "hidden"
             } space-y-6`}
           >
-            <div className="bg-white rounded-2xl p-6 shadow-card border border-border sticky top-24">
+            <div className="bg-card rounded-2xl p-6 shadow-card border border-border sticky top-24">
               <div className="flex items-center justify-between pb-4 border-b border-border">
                 <h3 className="font-semibold text-text flex items-center gap-2">
                   <SlidersHorizontal className="h-4 w-4 text-primary" />

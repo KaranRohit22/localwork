@@ -117,12 +117,12 @@ export default function HowItWorksPage() {
           </p>
 
           {/* Tab Selector */}
-          <div className="mt-8 inline-flex p-1.5 bg-input-bg border border-border rounded-2xl">
+          <div className="mt-8 inline-flex p-1.5 bg-card border border-border rounded-2xl shadow-inner">
             <button
               onClick={() => setActiveTab("customers")}
               className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 activeTab === "customers"
-                  ? "bg-white text-navy shadow-sm"
+                  ? "bg-gradient-to-r from-primary to-teal text-white shadow-lg shadow-primary/25 font-bold"
                   : "text-text-muted hover:text-text"
               }`}
             >
@@ -132,7 +132,7 @@ export default function HowItWorksPage() {
               onClick={() => setActiveTab("pros")}
               className={`px-6 py-2.5 rounded-xl font-semibold text-sm transition-all ${
                 activeTab === "pros"
-                  ? "bg-white text-navy shadow-sm"
+                  ? "bg-gradient-to-r from-primary to-teal text-white shadow-lg shadow-primary/25 font-bold"
                   : "text-text-muted hover:text-text"
               }`}
             >
@@ -148,13 +148,13 @@ export default function HowItWorksPage() {
             return (
               <Card
                 key={item.step}
-                className="p-6 relative overflow-hidden border-border transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover"
+                className="p-6 relative overflow-hidden border-border transition-all duration-300 hover:-translate-y-1 hover:border-border-hover hover:shadow-card-hover group"
               >
-                <div className="text-4xl font-black text-navy/10 absolute top-4 right-4 select-none">
+                <div className="text-4xl font-black text-primary/10 group-hover:text-primary/20 transition-colors absolute top-4 right-4 select-none">
                   {item.step}
                 </div>
 
-                <div className="h-12 w-12 rounded-xl bg-primary-light text-primary flex items-center justify-center mb-6">
+                <div className="h-12 w-12 rounded-xl bg-primary/15 border border-primary/25 text-primary flex items-center justify-center mb-6 group-hover:scale-105 transition-transform">
                   <Icon className="h-6 w-6" />
                 </div>
 

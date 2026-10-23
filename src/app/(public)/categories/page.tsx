@@ -38,18 +38,18 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 const categoryColors: Record<string, { bg: string; text: string }> = {
-  plumbing: { bg: "bg-blue-50", text: "text-blue-600" },
-  electrical: { bg: "bg-amber-50", text: "text-amber-600" },
-  carpentry: { bg: "bg-orange-50", text: "text-orange-600" },
-  painting: { bg: "bg-purple-50", text: "text-purple-600" },
-  cleaning: { bg: "bg-teal-50", text: "text-teal-600" },
-  landscaping: { bg: "bg-green-50", text: "text-green-600" },
-  hvac: { bg: "bg-red-50", text: "text-red-600" },
-  roofing: { bg: "bg-slate-100", text: "text-slate-600" },
-  moving: { bg: "bg-indigo-50", text: "text-indigo-600" },
-  photography: { bg: "bg-pink-50", text: "text-pink-600" },
-  tutoring: { bg: "bg-cyan-50", text: "text-cyan-600" },
-  "pet-care": { bg: "bg-yellow-50", text: "text-yellow-700" },
+  plumbing: { bg: "bg-blue-500/10 border border-blue-500/20", text: "text-blue-400" },
+  electrical: { bg: "bg-amber-500/10 border border-amber-500/20", text: "text-amber-400" },
+  carpentry: { bg: "bg-orange-500/10 border border-orange-500/20", text: "text-orange-400" },
+  painting: { bg: "bg-purple-500/10 border border-purple-500/20", text: "text-purple-400" },
+  cleaning: { bg: "bg-teal-500/10 border border-teal-500/20", text: "text-teal-400" },
+  landscaping: { bg: "bg-emerald-500/10 border border-emerald-500/20", text: "text-emerald-400" },
+  hvac: { bg: "bg-rose-500/10 border border-rose-500/20", text: "text-rose-400" },
+  roofing: { bg: "bg-slate-500/10 border border-slate-500/20", text: "text-slate-300" },
+  moving: { bg: "bg-indigo-500/10 border border-indigo-500/20", text: "text-indigo-400" },
+  photography: { bg: "bg-pink-500/10 border border-pink-500/20", text: "text-pink-400" },
+  tutoring: { bg: "bg-cyan-500/10 border border-cyan-500/20", text: "text-cyan-400" },
+  "pet-care": { bg: "bg-yellow-500/10 border border-yellow-500/20", text: "text-yellow-400" },
 };
 
 export default function CategoriesPage() {
@@ -66,7 +66,7 @@ export default function CategoriesPage() {
       <div className="page-container">
         {/* Header */}
         <div className="text-center max-w-2xl mx-auto mb-12">
-          <h1 className="text-3xl md:text-5xl font-bold text-text tracking-tight">
+          <h1 className="text-3xl md:text-5xl font-extrabold text-text tracking-tight">
             Explore All Categories
           </h1>
           <p className="mt-4 text-base md:text-lg text-text-secondary">
@@ -81,7 +81,7 @@ export default function CategoriesPage() {
               placeholder="Search categories (e.g. plumbing, cleaning)..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 rounded-xl border border-border bg-white text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
+              className="w-full pl-12 pr-4 py-3 rounded-2xl border border-border bg-input-bg text-text placeholder:text-text-muted text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary"
             />
           </div>
         </div>

@@ -145,12 +145,12 @@ function ProfessionalProfileContent({ params }: PageProps) {
                   />
                   {professional.is_available ? (
                     <span
-                      className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-success ring-4 ring-white"
+                      className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-success ring-4 ring-card"
                       title="Available for bookings"
                     />
                   ) : (
                     <span
-                      className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-text-muted ring-4 ring-white"
+                      className="absolute bottom-1 right-1 h-5 w-5 rounded-full bg-text-muted ring-4 ring-card"
                       title="Currently busy"
                     />
                   )}
@@ -372,7 +372,7 @@ function ProfessionalProfileContent({ params }: PageProps) {
                 <span className="text-xs font-semibold uppercase tracking-wider text-text-muted">
                   Hourly Rate
                 </span>
-                <span className="text-3xl font-extrabold text-navy">
+                <span className="text-3xl font-extrabold text-text">
                   {professional.hourly_rate ? `$${professional.hourly_rate}` : "Quote"}
                   {professional.hourly_rate && (
                     <span className="text-sm font-normal text-text-muted"> / hour</span>

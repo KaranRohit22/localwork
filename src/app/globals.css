@@ -1,43 +1,48 @@
 @import "tailwindcss";
 
 /* ============================================================
-   LocalWork — Design System
-   Tailwind CSS v4 with CSS-first configuration
+   LocalWork — Design System: Modern Luxury Dark & Violet
+   Inspired by Linear, Vercel & Raycast
    ============================================================ */
 
 @theme inline {
-  /* Brand Colors */
-  --color-primary: #2563EB;
-  --color-primary-hover: #1D4ED8;
-  --color-primary-light: #DBEAFE;
-  --color-primary-dark: #1E40AF;
+  /* Brand Colors: Radiant Electric Indigo & Violet */
+  --color-primary: #6366F1;
+  --color-primary-hover: #4F46E5;
+  --color-primary-light: rgba(99, 102, 241, 0.15);
+  --color-primary-dark: #4338CA;
+  --color-primary-glow: rgba(99, 102, 241, 0.35);
 
-  --color-navy: #0F172A;
-  --color-navy-light: #1E293B;
+  /* Deep Midnight & Obsidian Canvas */
+  --color-navy: #080C14;
+  --color-navy-light: #0F172A;
 
-  --color-teal: #0D9488;
-  --color-teal-hover: #0F766E;
-  --color-teal-light: #CCFBF1;
+  /* Accent: Electric Violet & Magenta */
+  --color-teal: #8B5CF6;
+  --color-teal-hover: #7C3AED;
+  --color-teal-light: rgba(139, 92, 246, 0.15);
 
-  /* Neutrals */
-  --color-background: #F8FAFC;
-  --color-card: #FFFFFF;
-  --color-text: #111827;
-  --color-text-secondary: #64748B;
-  --color-text-muted: #94A3B8;
-  --color-border: #E2E8F0;
-  --color-border-hover: #CBD5E1;
-  --color-input-bg: #F1F5F9;
+  /* Neutrals: Modern Luxury Obsidian & Slate */
+  --color-background: #0B0F19;
+  --color-card: #111726;
+  --color-card-elevated: #151E32;
+  --color-text: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --color-border: #1E293B;
+  --color-border-hover: rgba(99, 102, 241, 0.45);
+  --color-input-bg: #0A0E1A;
 
-  /* Status Colors */
-  --color-success: #16A34A;
-  --color-success-light: #DCFCE7;
-  --color-warning: #D97706;
-  --color-warning-light: #FEF3C7;
-  --color-error: #DC2626;
-  --color-error-light: #FEE2E2;
-  --color-info: #2563EB;
-  --color-info-light: #DBEAFE;
+  /* Status Colors: Modern Vivid Tones */
+  --color-success: #10B981;
+  --color-success-light: rgba(16, 185, 129, 0.15);
+  --color-warning: #F59E0B;
+  --color-warning-light: rgba(245, 158, 11, 0.15);
+  --color-error: #F43F5E;
+  --color-error-light: rgba(244, 63, 94, 0.15);
+  --color-info: #6366F1;
+  --color-info-light: rgba(99, 102, 241, 0.15);
+  --color-amber: #F59E0B;
 
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
@@ -52,13 +57,15 @@
   --radius-md: 0.5rem;
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-card: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
-  --shadow-card-hover: 0 4px 12px -1px rgba(0, 0, 0, 0.08), 0 2px 6px -2px rgba(0, 0, 0, 0.05);
-  --shadow-dropdown: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
-  --shadow-modal: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+  /* Shadows: Glowing Violet & Obsidian Depth */
+  --shadow-card: 0 4px 20px -2px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --shadow-card-hover: 0 10px 30px -4px rgba(99, 102, 241, 0.25), 0 0 0 1px rgba(99, 102, 241, 0.45);
+  --shadow-dropdown: 0 12px 36px -4px rgba(0, 0, 0, 0.8), 0 0 0 1px rgba(255, 255, 255, 0.1);
+  --shadow-modal: 0 24px 48px -8px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.12);
+  --shadow-glow: 0 0 35px -5px rgba(99, 102, 241, 0.45);
 
   /* Container widths */
   --container-xs: 20rem;
@@ -68,11 +75,11 @@
   --container-xl: 80rem;
 
   /* Animations */
-  --ease-smooth: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* ============================================================
-   Global Styles
+   Global Styles & Canvas Background
    ============================================================ */
 
 * {
@@ -83,13 +90,33 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  color-scheme: dark;
 }
 
 body {
   font-family: var(--font-sans);
   color: var(--color-text);
   background-color: var(--color-background);
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(99, 102, 241, 0.16), transparent 70%),
+    radial-gradient(ellipse 70% 50% at 90% 100%, rgba(139, 92, 246, 0.1), transparent 60%);
+  background-attachment: fixed;
   line-height: 1.6;
+}
+
+/* ============================================================
+   Card & Surface Dark Theme Adaptation
+   ============================================================ */
+
+div.bg-white,
+header.bg-white,
+section.bg-white,
+nav.bg-white,
+aside.bg-white,
+main.bg-white,
+form.bg-white {
+  background-color: var(--color-card);
+  border-color: var(--color-border);
 }
 
 /* ============================================================
@@ -100,7 +127,13 @@ h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   font-weight: 700;
   line-height: 1.2;
-  color: var(--color-navy);
+  letter-spacing: -0.02em;
+  color: var(--color-text);
+}
+
+/* Ensure headings with text-navy adapt to crisp light text */
+.text-navy {
+  color: var(--color-text) !important;
 }
 
 /* ============================================================
@@ -114,7 +147,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* ============================================================
-   Scrollbar (subtle)
+   Scrollbar (Linear Sleek Dark)
    ============================================================ */
 
 ::-webkit-scrollbar {
@@ -127,12 +160,12 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border-hover);
+  background: rgba(148, 163, 184, 0.2);
   border-radius: var(--radius-full);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-muted);
+  background: rgba(99, 102, 241, 0.5);
 }
 
 /* ============================================================
@@ -177,21 +210,38 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
-/* Card hover effect */
+/* Glassmorphism panel */
+.glass-panel {
+  background: rgba(17, 23, 38, 0.7);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* Card hover effect with violet glow */
 .card-hover {
-  transition: box-shadow 0.2s var(--ease-smooth), transform 0.2s var(--ease-smooth);
+  transition: all 0.25s var(--ease-smooth);
 }
 .card-hover:hover {
   box-shadow: var(--shadow-card-hover);
-  transform: translateY(-1px);
+  border-color: var(--color-border-hover);
+  transform: translateY(-2px);
 }
 
-/* Gradient text */
+/* Radiant Violet Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, var(--color-primary), var(--color-teal));
+  background: linear-gradient(135deg, #818CF8 0%, #C084FC 50%, #F472B6 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* Glow pill */
+.glow-badge {
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.3);
+  color: #C7D2FE;
+  box-shadow: 0 0 15px -3px rgba(99, 102, 241, 0.25);
 }
 
 /* Smooth fade-in animation */
@@ -213,9 +263,9 @@ h1, h2, h3, h4, h5, h6 {
 .skeleton {
   background: linear-gradient(
     90deg,
-    var(--color-input-bg) 25%,
+    var(--color-card) 25%,
     var(--color-border) 50%,
-    var(--color-input-bg) 75%
+    var(--color-card) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;

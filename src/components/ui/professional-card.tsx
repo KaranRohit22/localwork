@@ -34,7 +34,7 @@ export function ProfessionalCard({
   } = professional;
 
   return (
-    <Card className="group relative flex flex-col justify-between overflow-hidden transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover border-border">
+    <Card className="group relative flex flex-col justify-between overflow-hidden p-0 transition-all duration-200 hover:-translate-y-1 hover:shadow-card-hover border-border bg-card">
       {/* Top Section */}
       <div className="p-6">
         <div className="flex items-start justify-between gap-4">
@@ -47,12 +47,12 @@ export function ProfessionalCard({
               />
               {is_available ? (
                 <span
-                  className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success ring-2 ring-white"
+                  className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-success ring-2 ring-card"
                   title="Available for new requests"
                 />
               ) : (
                 <span
-                  className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-text-muted ring-2 ring-white"
+                  className="absolute bottom-0 right-0 h-3.5 w-3.5 rounded-full bg-text-muted ring-2 ring-card"
                   title="Currently busy"
                 />
               )}
@@ -125,7 +125,7 @@ export function ProfessionalCard({
             </Badge>
           ))}
           {skills.slice(0, 3).map((skill) => (
-            <Badge key={skill} variant="outline" className="bg-input-bg text-text-secondary">
+            <Badge key={skill} variant="outline" className="bg-card-elevated text-text-secondary border-border">
               {skill}
             </Badge>
           ))}
@@ -146,7 +146,7 @@ export function ProfessionalCard({
       </div>
 
       {/* Footer Info & Actions */}
-      <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-navy-light/5">
+      <div className="flex items-center justify-between border-t border-border px-6 py-4 bg-card-elevated/40">
         <div>
           <span className="text-xs text-text-muted block">Rate</span>
           <span className="text-lg font-bold text-text">

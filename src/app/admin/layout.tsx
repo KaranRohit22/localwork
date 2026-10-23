@@ -47,16 +47,16 @@ export default function AdminDashboardLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col md:flex-row">
       {/* Mobile Top Bar */}
-      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-border sticky top-0 z-40">
+      <div className="md:hidden flex items-center justify-between p-4 bg-card border-b border-border sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <Logo />
-          <span className="text-[10px] font-bold bg-error text-white px-2 py-0.5 rounded-full">
+          <span className="text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full">
             Admin
           </span>
         </div>
         <button
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          className="p-2 rounded-lg text-text-muted hover:text-text hover:bg-input-bg"
+          className="p-2 rounded-lg text-text-muted hover:text-white hover:bg-card-elevated"
           aria-label="Toggle navigation"
         >
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -66,30 +66,30 @@ export default function AdminDashboardLayout({
       {/* Sidebar Navigation */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-white flex flex-col transition-transform duration-200 md:static md:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 bg-card border-r border-border text-text flex flex-col transition-transform duration-200 md:static md:translate-x-0",
           mobileMenuOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         {/* Brand Header */}
-        <div className="p-6 border-b border-white/10 flex items-center justify-between">
+        <div className="p-6 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold tracking-tight text-white">
-              Local<span className="text-primary">Work</span>
+            <span className="text-xl font-extrabold tracking-tight text-white">
+              Local<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal">Work</span>
             </span>
-            <span className="text-[10px] font-extrabold uppercase tracking-wider bg-red-600 text-white px-2 py-0.5 rounded-full">
-              Super Admin
+            <span className="text-[10px] font-extrabold uppercase tracking-wider bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full">
+              Admin
             </span>
           </div>
           <button
             onClick={() => setMobileMenuOpen(false)}
-            className="md:hidden text-white/60 hover:text-white"
+            className="md:hidden text-text-muted hover:text-white"
           >
             <X className="h-5 w-5" />
           </button>
         </div>
 
         {/* Navigation Items */}
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1.5 overflow-y-auto">
           {adminNavItems.map((item) => {
             const Icon = item.icon;
             const isActive =
@@ -103,10 +103,10 @@ export default function AdminDashboardLayout({
                 href={item.href}
                 onClick={() => setMobileMenuOpen(false)}
                 className={cn(
-                  "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-colors",
+                  "flex items-center justify-between px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                   isActive
-                    ? "bg-primary text-white shadow-sm"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
+                    ? "bg-gradient-to-r from-primary to-teal text-white shadow-md shadow-primary/25 font-semibold"
+                    : "text-text-secondary hover:text-white hover:bg-card-elevated"
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -114,7 +114,7 @@ export default function AdminDashboardLayout({
                   <span>{item.label}</span>
                 </div>
                 {item.badge && (
-                  <span className="text-[10px] font-bold bg-amber text-navy px-1.5 py-0.5 rounded-full">
+                  <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1.5 py-0.5 rounded-full">
                     {item.badge}
                   </span>
                 )}
@@ -124,21 +124,21 @@ export default function AdminDashboardLayout({
         </nav>
 
         {/* Public Site Shortcut */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-border">
           <Link
             href="/"
-            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-white/10 text-white text-xs font-semibold hover:bg-white/15 transition-colors"
+            className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-card-elevated text-text text-xs font-semibold hover:text-white hover:bg-card-elevated/80 border border-border transition-colors"
           >
             <span>Exit to Public Site</span>
-            <ExternalLink className="h-3.5 w-3.5 text-white/60" />
+            <ExternalLink className="h-3.5 w-3.5 text-text-muted" />
           </Link>
         </div>
 
         {/* Sign Out */}
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-border">
           <button
             onClick={handleSignOut}
-            className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-red-400 hover:bg-white/10 transition-colors"
+            className="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-rose-400 hover:bg-error-light/30 transition-colors"
           >
             <LogOut className="h-4 w-4" />
             <span>Sign Out</span>
@@ -149,10 +149,10 @@ export default function AdminDashboardLayout({
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
-        <header className="hidden md:flex h-16 items-center justify-between px-8 bg-white border-b border-border sticky top-0 z-30">
+        <header className="hidden md:flex h-16 items-center justify-between px-8 bg-card/60 backdrop-blur-md border-b border-border sticky top-0 z-30">
           <div className="flex items-center gap-3">
             <h2 className="text-lg font-bold text-text">System Administration</h2>
-            <span className="text-xs bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded-full font-medium">
+            <span className="text-xs bg-card-elevated border border-border text-text-secondary px-2.5 py-0.5 rounded-full font-medium">
               v1.0 Production
             </span>
           </div>

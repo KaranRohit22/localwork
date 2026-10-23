@@ -59,7 +59,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 md:p-8 animate-fade-in">
       {/* Backdrop */}
       <div
-        className="fixed inset-0 bg-navy/60 backdrop-blur-sm transition-opacity"
+        className="fixed inset-0 bg-navy/80 backdrop-blur-md transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -72,7 +72,7 @@ export function Modal({
         aria-labelledby={title ? "modal-title" : undefined}
         aria-describedby={description ? "modal-description" : undefined}
         className={cn(
-          "relative w-full rounded-2xl bg-white shadow-modal p-6 z-10 overflow-y-auto max-h-[90vh] transition-all transform animate-in fade-in zoom-in-95",
+          "relative w-full rounded-2xl bg-card border border-border shadow-modal p-6 z-10 overflow-y-auto max-h-[90vh] transition-all transform animate-in fade-in zoom-in-95 text-text",
           maxWidthClasses[maxWidth],
           className
         )}
@@ -80,7 +80,7 @@ export function Modal({
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-2 text-text-muted hover:text-text rounded-full hover:bg-input-bg transition-colors"
+          className="absolute top-4 right-4 p-2 text-text-muted hover:text-white rounded-full hover:bg-card-elevated transition-colors"
           aria-label="Close dialog"
         >
           <X className="h-5 w-5" />

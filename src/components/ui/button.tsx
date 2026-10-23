@@ -3,18 +3,20 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-lg font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer text-sm",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 cursor-pointer text-sm active:scale-[0.98]",
   {
     variants: {
       variant: {
-        default: "bg-primary text-white hover:bg-primary-hover shadow-sm",
-        secondary: "bg-teal text-white hover:bg-teal-hover shadow-sm",
+        default:
+          "bg-gradient-to-r from-primary to-teal text-white hover:opacity-95 shadow-md shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.01]",
+        secondary:
+          "bg-card-elevated border border-border text-text hover:bg-card hover:border-border-hover shadow-sm",
         outline:
-          "border border-border bg-white text-text hover:bg-input-bg hover:border-border-hover",
-        ghost: "text-text-secondary hover:bg-input-bg hover:text-text",
-        destructive: "bg-error text-white hover:bg-red-700 shadow-sm",
+          "border border-border bg-card/60 backdrop-blur-sm text-text hover:bg-card hover:border-border-hover hover:text-white",
+        ghost: "text-text-secondary hover:bg-card hover:text-text",
+        destructive: "bg-error text-white hover:bg-rose-600 shadow-md shadow-error/20",
         link: "text-primary underline-offset-4 hover:underline p-0 h-auto",
-        success: "bg-success text-white hover:bg-green-700 shadow-sm",
+        success: "bg-success text-white hover:bg-emerald-600 shadow-md shadow-success/20",
       },
       size: {
         sm: "h-9 px-3 text-sm",

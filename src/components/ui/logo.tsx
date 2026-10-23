@@ -29,20 +29,20 @@ export function Logo({ className, size = "md", showText = true }: LogoProps) {
     >
       <div
         className={cn(
-          "relative flex items-center justify-center rounded-lg bg-primary text-white transition-transform duration-200 group-hover:scale-105",
+          "relative flex items-center justify-center rounded-xl bg-gradient-to-tr from-primary to-teal text-white shadow-md shadow-primary/30 transition-all duration-200 group-hover:scale-105 group-hover:shadow-primary/50",
           sizeClasses[size]
         )}
       >
-        <MapPin className="h-[60%] w-[60%]" strokeWidth={2.5} />
+        <MapPin className="h-[58%] w-[58%]" strokeWidth={2.5} />
       </div>
       {showText && (
         <span
           className={cn(
-            "font-bold tracking-tight text-navy",
+            "font-extrabold tracking-tight text-text",
             textSizeClasses[size]
           )}
         >
-          Local<span className="text-primary">Work</span>
+          Local<span className="text-transparent bg-clip-text bg-gradient-to-r from-primary to-teal font-black">Work</span>
         </span>
       )}
     </Link>

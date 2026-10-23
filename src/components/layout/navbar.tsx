@@ -110,23 +110,23 @@ export function Navbar() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-border">
+    <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
       <nav className="page-container" aria-label="Main navigation">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Logo />
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center gap-1">
+          <div className="hidden md:flex items-center gap-1.5">
             {publicLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "px-3 py-2 text-sm font-medium rounded-lg transition-colors",
+                  "px-3.5 py-1.5 text-sm font-medium rounded-xl transition-all duration-200",
                   pathname === link.href
-                    ? "text-primary bg-primary-light"
-                    : "text-text-secondary hover:text-text hover:bg-input-bg"
+                    ? "text-white bg-primary/20 border border-primary/30 shadow-sm shadow-primary/20"
+                    : "text-text-secondary hover:text-white hover:bg-card-elevated"
                 )}
               >
                 {link.label}
@@ -139,7 +139,7 @@ export function Navbar() {
             {/* Search button (mobile) */}
             <Link
               href="/professionals"
-              className="md:hidden p-2 text-text-secondary hover:text-text rounded-lg hover:bg-input-bg transition-colors"
+              className="md:hidden p-2 text-text-secondary hover:text-text rounded-lg hover:bg-card-elevated transition-colors"
               aria-label="Search professionals"
             >
               <Search className="h-5 w-5" />
@@ -152,7 +152,7 @@ export function Navbar() {
                     {/* Notifications */}
                     <Link
                       href={`${dashboardLink}/notifications`}
-                      className="relative p-2 text-text-secondary hover:text-text rounded-lg hover:bg-input-bg transition-colors"
+                      className="relative p-2 text-text-secondary hover:text-text rounded-xl hover:bg-card-elevated transition-colors"
                       aria-label="Notifications"
                     >
                       <Bell className="h-5 w-5" />
@@ -162,7 +162,7 @@ export function Navbar() {
                     <div className="relative" data-user-dropdown>
                       <button
                         onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                        className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-input-bg transition-colors"
+                        className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-card-elevated transition-colors"
                         aria-expanded={isDropdownOpen}
                         aria-haspopup="true"
                       >
@@ -183,7 +183,7 @@ export function Navbar() {
                       </button>
 
                       {isDropdownOpen && (
-                        <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl border border-border shadow-dropdown py-1 animate-fade-in">
+                        <div className="absolute right-0 mt-2 w-56 bg-card rounded-2xl border border-border shadow-modal py-1.5 animate-fade-in backdrop-blur-md">
                           <div className="px-4 py-3 border-b border-border">
                             <p className="text-sm font-medium text-text truncate">
                               {user.full_name}
@@ -194,14 +194,14 @@ export function Navbar() {
                           </div>
                           <Link
                             href={dashboardLink}
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-text hover:bg-input-bg transition-colors"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-white hover:bg-card-elevated transition-colors"
                           >
                             <LayoutDashboard className="h-4 w-4" />
                             Dashboard
                           </Link>
                           <Link
                             href={`${dashboardLink}/settings`}
-                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-text hover:bg-input-bg transition-colors"
+                            className="flex items-center gap-2 px-4 py-2.5 text-sm text-text-secondary hover:text-white hover:bg-card-elevated transition-colors"
                           >
                             <User className="h-4 w-4" />
                             Account Settings
@@ -209,7 +209,7 @@ export function Navbar() {
                           <div className="border-t border-border my-1" />
                           <button
                             onClick={handleSignOut}
-                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-error hover:bg-error-light transition-colors"
+                            className="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-rose-400 hover:bg-error-light transition-colors"
                           >
                             <LogOut className="h-4 w-4" />
                             Sign Out
@@ -258,10 +258,10 @@ export function Navbar() {
                   key={link.href}
                   href={link.href}
                   className={cn(
-                    "px-3 py-2.5 text-sm font-medium rounded-lg transition-colors",
+                    "px-3.5 py-2.5 text-sm font-medium rounded-xl transition-colors",
                     pathname === link.href
-                      ? "text-primary bg-primary-light"
-                      : "text-text-secondary hover:text-text hover:bg-input-bg"
+                      ? "text-white bg-primary/20 border border-primary/30"
+                      : "text-text-secondary hover:text-white hover:bg-card-elevated"
                   )}
                 >
                   {link.label}

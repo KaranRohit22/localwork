@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { MapPin, Mail, Phone } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
+import { Logo } from "@/components/ui/logo";
 
 const footerLinks = {
   platform: [
@@ -23,20 +24,17 @@ const footerLinks = {
 
 export function Footer() {
   return (
-    <footer className="bg-navy text-white/80 mt-auto">
-      <div className="page-container py-12 md:py-16">
+    <footer className="bg-card/80 border-t border-border/80 backdrop-blur-md text-text-muted mt-auto relative overflow-hidden">
+      {/* Subtle background glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-96 h-24 bg-primary/10 blur-3xl pointer-events-none rounded-full" />
+      <div className="page-container py-12 md:py-16 relative z-10">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12">
           {/* Brand */}
           <div className="sm:col-span-2 lg:col-span-1">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-primary text-white">
-                <MapPin className="h-5 w-5" strokeWidth={2.5} />
-              </div>
-              <span className="text-xl font-bold text-white">
-                Local<span className="text-primary">Work</span>
-              </span>
+            <div className="mb-4">
+              <Logo />
             </div>
-            <p className="text-sm text-white/60 max-w-xs mb-6">
+            <p className="text-sm text-text-muted max-w-xs mb-6">
               Connecting customers with trusted local professionals. Find the
               right expert for every job.
             </p>
@@ -54,7 +52,7 @@ export function Footer() {
 
           {/* Platform Links */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-text mb-4 uppercase tracking-wider">
               Platform
             </h4>
             <ul className="space-y-2.5">
@@ -62,7 +60,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/60 hover:text-white transition-colors"
+                    className="text-sm text-text-muted hover:text-text transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -73,7 +71,7 @@ export function Footer() {
 
           {/* Company Links */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-text mb-4 uppercase tracking-wider">
               Company
             </h4>
             <ul className="space-y-2.5">
@@ -81,7 +79,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/60 hover:text-white transition-colors"
+                    className="text-sm text-text-muted hover:text-text transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -92,7 +90,7 @@ export function Footer() {
 
           {/* Legal Links */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4 uppercase tracking-wider">
+            <h4 className="text-sm font-semibold text-text mb-4 uppercase tracking-wider">
               Legal
             </h4>
             <ul className="space-y-2.5">
@@ -100,7 +98,7 @@ export function Footer() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className="text-sm text-white/60 hover:text-white transition-colors"
+                    className="text-sm text-text-muted hover:text-text transition-colors"
                   >
                     {link.label}
                   </Link>
@@ -111,11 +109,11 @@ export function Footer() {
         </div>
 
         {/* Bottom bar */}
-        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-white/40">
+        <div className="mt-12 pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-text-muted">
             &copy; 2026 LocalWork. All rights reserved.
           </p>
-          <p className="text-xs text-white/30">
+          <p className="text-xs text-text-muted/60">
             Built with trust, transparency, and care.
           </p>
         </div>
