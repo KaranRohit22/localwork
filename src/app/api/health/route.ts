@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
 export async function GET(request: Request) {
-  // Use request to ensure route is evaluated dynamically
-  const urlParams = new URL(request.url).searchParams;
-  const _force = urlParams.get("t");
+  // Access request to ensure route is evaluated dynamically
+  const requestUrl = new URL(request.url);
+  const cacheBuster = requestUrl.searchParams.get("t");
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL;
@@ -24,7 +24,7 @@ export async function GET(request: Request) {
         NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL
           ? "PRESENT (Value: " + process.env.NEXT_PUBLIC_SUPABASE_URL.substring(0, 15) + "...)"
           : "NOT SET (Missing in Vercel)",
-        NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: anonKey
           ? "PRESENT"
           : "NOT SET (Missing in Vercel)",
         SUPABASE_SERVICE_ROLE_KEY: serviceKey
@@ -34,6 +34,7 @@ export async function GET(request: Request) {
           ? "PRESENT (Rename to NEXT_PUBLIC_SUPABASE_URL)"
           : "NOT SET",
         vercelEnvironment: process.env.VERCEL_ENV || "unknown / localhost",
+        queryTimestamp: cacheBuster ?? new Date().toISOString(),
       },
       nextStepAction: "Make sure variables are added in Vercel under Project Settings -> Environment Variables with [x] Production checked, then Redeploy without build cache.",
     });
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
         message: "Supabase URL is connected, but query failed. Did you run the SQL migration (001_initial_schema.sql)?",
         errorDetails: error.message,
         supabaseUrl: url,
+        queryTimestamp: cacheBuster ?? new Date().toISOString(),
       });
     }
 
@@ -62,6 +64,7 @@ export async function GET(request: Request) {
       supabaseUrl: url,
       categoriesCount: count ?? 0,
       timestamp: new Date().toISOString(),
+      queryTimestamp: cacheBuster ?? undefined,
     });
   } catch (err: unknown) {
     return NextResponse.json({
