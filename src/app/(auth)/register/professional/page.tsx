@@ -54,6 +54,18 @@ export default function ProfessionalRegisterPage() {
     setServerError(null);
 
     try {
+      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+      const isPlaceholder = !url || url.includes("placeholder-project");
+
+      if (isPlaceholder) {
+        // Mock fallback for preview mode without Supabase connection
+        setSuccessMessage(true);
+        setTimeout(() => {
+          router.push("/dashboard/professional");
+        }, 1500);
+        return;
+      }
+
       // 1. Sign up user with Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: data.email,
@@ -68,7 +80,13 @@ export default function ProfessionalRegisterPage() {
       });
 
       if (authError) {
-        setServerError(authError.message);
+        if (authError.message.includes("Failed to fetch")) {
+          setServerError(
+            "Unable to reach Supabase. Please verify NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel settings and redeploy."
+          );
+        } else {
+          setServerError(authError.message);
+        }
         return;
       }
 
