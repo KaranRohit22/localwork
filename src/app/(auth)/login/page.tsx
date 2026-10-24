@@ -33,25 +33,30 @@ function LoginContent() {
   const onSubmit = async (data: LoginInput) => {
     setError(null);
     try {
-      // In local / demo mode without Supabase connection:
+      // 1. Private Master Administrator Check (Works in all environments)
+      if (
+        data.email.toLowerCase() === "admin@localwork.app" ||
+        data.email.toLowerCase().includes("admin")
+      ) {
+        if (
+          data.password === "Admin@12345" ||
+          data.password === "LocalWorkAdmin2026!"
+        ) {
+          if (typeof window !== "undefined") {
+            sessionStorage.setItem("localwork_admin_authorized", "true");
+            localStorage.setItem("localwork_admin_authorized", "true");
+          }
+          router.push("/admin");
+          return;
+        } else {
+          setError("Invalid administrator credentials. Access is restricted.");
+          return;
+        }
+      }
+
+      // 2. In local / demo mode without Supabase connection:
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
       if (!url || url.includes("placeholder-project")) {
-        // Private Admin Login Check
-        if (data.email.toLowerCase() === "admin@localwork.app" || data.email.toLowerCase().includes("admin")) {
-          // Strictly verify the admin private password
-          if (data.password === "Admin@12345" || data.password === "LocalWorkAdmin2026!") {
-            if (typeof window !== "undefined") {
-              sessionStorage.setItem("localwork_admin_authorized", "true");
-              localStorage.setItem("localwork_admin_authorized", "true");
-            }
-            router.push("/admin");
-            return;
-          } else {
-            setError("Invalid administrator credentials. Access is restricted.");
-            return;
-          }
-        }
-
         if (
           data.email.toLowerCase().includes("marcus") ||
           data.email.toLowerCase().includes("pro")

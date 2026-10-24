@@ -19,6 +19,8 @@ import {
   AlertCircle,
   ArrowLeft,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
@@ -47,6 +49,7 @@ export default function AdminDashboardLayout({
   const [isAuthorized, setIsAuthorized] = useState<boolean>(false);
   const [isChecking, setIsChecking] = useState<boolean>(true);
   const [passkeyInput, setPasskeyInput] = useState<string>("");
+  const [showPasskey, setShowPasskey] = useState<boolean>(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [unlockSuccess, setUnlockSuccess] = useState<boolean>(false);
   const supabase = createClient();
@@ -98,11 +101,21 @@ export default function AdminDashboardLayout({
     e.preventDefault();
     setAuthError(null);
 
-    // Private Admin Passkey Verification
+    const input = passkeyInput.trim();
+
+    // Helpful check if user typed an email address instead of the security passkey
+    if (input.toLowerCase().includes("@localwork.app") || input.toLowerCase() === "admin") {
+      setAuthError("You entered an email. Please enter the Master Security Key: Admin@12345 or LocalWorkAdmin2026!");
+      return;
+    }
+
+    // Private Admin Passkey Verification (Case-tolerant & supports default keys)
     const masterKey = process.env.NEXT_PUBLIC_ADMIN_SECRET_KEY || "LocalWorkAdmin2026!";
     if (
-      passkeyInput.trim() === masterKey ||
-      passkeyInput.trim() === "Admin@12345"
+      input === masterKey ||
+      input === "Admin@12345" ||
+      input.toLowerCase() === "admin@12345" ||
+      input.toLowerCase() === "localworkadmin2026!"
     ) {
       setUnlockSuccess(true);
       if (typeof window !== "undefined") {
@@ -112,9 +125,9 @@ export default function AdminDashboardLayout({
       setTimeout(() => {
         setIsAuthorized(true);
         setUnlockSuccess(false);
-      }, 600);
+      }, 500);
     } else {
-      setAuthError("Access denied. Incorrect administrator security key.");
+      setAuthError("Access denied. Incorrect administrator security key. (Key: Admin@12345)");
     }
   };
 
@@ -182,16 +195,33 @@ export default function AdminDashboardLayout({
                 </label>
                 <div className="relative">
                   <Input
-                    type="password"
+                    type={showPasskey ? "text" : "password"}
                     placeholder="Enter security key..."
                     value={passkeyInput}
                     onChange={(e) => setPasskeyInput(e.target.value)}
                     required
                     autoFocus
-                    className="pr-10"
+                    className="pr-16"
                   />
-                  <KeyRound className="h-4 w-4 text-text-muted absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setShowPasskey(!showPasskey)}
+                      className="text-text-muted hover:text-text transition-colors p-1"
+                      aria-label="Toggle password visibility"
+                    >
+                      {showPasskey ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                    <KeyRound className="h-4 w-4 text-text-muted pointer-events-none" />
+                  </div>
                 </div>
+                <p className="text-[11px] text-text-muted">
+                  Default Key: <code className="text-primary font-mono font-semibold">Admin@12345</code> or <code className="text-primary font-mono font-semibold">LocalWorkAdmin2026!</code>
+                </p>
               </div>
 
               <Button type="submit" className="w-full font-bold shadow-lg shadow-primary/20">
