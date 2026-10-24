@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-export async function GET() {
+export async function GET(request: Request) {
+  // Use request to ensure route is evaluated dynamically
+  const urlParams = new URL(request.url).searchParams;
+  const _force = urlParams.get("t");
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL;
