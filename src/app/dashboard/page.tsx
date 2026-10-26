@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ClipboardList,
@@ -16,12 +17,60 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { mockRequests } from "@/lib/data/mock-data";
+import { getCurrentUserProfileAction, getCurrentUserRequestsAction } from "@/app/actions/auth";
+import { Profile } from "@/types";
+
+interface UserRequestItem {
+  id: string;
+  title: string;
+  description: string;
+  status: string;
+  budget: number | null;
+  created_at: string;
+  preferred_date: string | null;
+  city: string | null;
+}
 
 export default function CustomerDashboardPage() {
-  const activeRequests = mockRequests.filter(
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [userRequests, setUserRequests] = useState<UserRequestItem[]>([]);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      getCurrentUserProfileAction(),
+      getCurrentUserRequestsAction(),
+    ]).then(([profileRes, requestsRes]) => {
+      if (isMounted) {
+        if (profileRes.profile) {
+          setProfile(profileRes.profile);
+          setIsAuthenticated(true);
+        }
+        if (requestsRes.requests && requestsRes.requests.length > 0) {
+          setUserRequests(requestsRes.requests);
+        }
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Display user's own requests if authenticated, or mock requests in preview
+  const displayedRequests = isAuthenticated
+    ? userRequests
+    : mockRequests;
+
+  const activeRequests = displayedRequests.filter(
     (r) => r.status === "pending" || r.status === "accepted" || r.status === "in_progress"
   );
-  const completedRequests = mockRequests.filter((r) => r.status === "completed");
+  const completedRequests = displayedRequests.filter((r) => r.status === "completed");
+
+  const firstName = profile?.full_name?.trim()
+    ? profile.full_name.trim().split(" ")[0]
+    : null;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -47,7 +96,7 @@ export default function CustomerDashboardPage() {
             Customer Dashboard
           </span>
           <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">
-            Welcome back, Sarah!
+            {firstName ? `Welcome back, ${firstName}!` : "Welcome to LocalWork!"}
           </h1>
           <p className="text-white/70 text-sm mt-1 max-w-xl">
             Track your ongoing service requests, connect with verified professionals, and review completed home projects.

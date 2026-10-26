@@ -1,14 +1,34 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Star, MessageSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { mockReviews } from "@/lib/data/mock-data";
+import { getCurrentUserProfileAction } from "@/app/actions/auth";
 
 export default function CustomerReviewsPage() {
-  // Reviews by customer "Sarah Miller" (cust-1)
-  const myReviews = mockReviews.filter((r) => r.customer_id === "cust-1");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted && res.authenticated && res.user) {
+        setUserId(res.user.id);
+        setIsAuthenticated(true);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // Display user's reviews if authenticated, or demo reviews in preview mode
+  const myReviews = isAuthenticated
+    ? mockReviews.filter((r) => r.customer_id === userId)
+    : mockReviews.filter((r) => r.customer_id === "cust-1");
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">

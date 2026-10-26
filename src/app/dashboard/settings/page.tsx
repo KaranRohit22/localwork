@@ -1,20 +1,41 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Lock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Avatar } from "@/components/ui/avatar";
+import { getCurrentUserProfileAction, updateCurrentUserProfileAction } from "@/app/actions/auth";
 
 export default function CustomerSettingsPage() {
-  const [fullName, setFullName] = useState("Sarah Miller");
-  const [email] = useState("sarah.miller@gmail.com");
-  const [phone, setPhone] = useState("+1 (206) 555-9011");
-  const [avatarUrl, setAvatarUrl] = useState(
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80"
-  );
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted) {
+        if (res.profile) {
+          setFullName(res.profile.full_name || "");
+          setEmail(res.profile.email || "");
+          setPhone(res.profile.phone || "");
+          setAvatarUrl(res.profile.avatar_url || null);
+        } else if (res.user) {
+          setEmail(res.user.email || "");
+          setFullName(res.user.email?.split("@")[0] || "");
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Password state
   const [oldPassword, setOldPassword] = useState("");
@@ -23,8 +44,23 @@ export default function CustomerSettingsPage() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaveError(null);
+    setIsSaving(true);
+
+    const res = await updateCurrentUserProfileAction({
+      full_name: fullName,
+      phone: phone || null,
+      avatar_url: avatarUrl,
+    });
+
+    setIsSaving(false);
+    if (!res.success) {
+      setSaveError(res.error || "Failed to update profile.");
+      return;
+    }
+
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 3000);
   };
@@ -72,9 +108,16 @@ export default function CustomerSettingsPage() {
           </div>
         )}
 
+        {saveError && (
+          <div className="mb-6 flex items-center gap-2 p-3.5 rounded-xl bg-error-light text-error text-xs font-semibold">
+            <AlertCircle className="h-4 w-4" />
+            {saveError}
+          </div>
+        )}
+
         <form onSubmit={handleProfileSubmit} className="space-y-5">
           <div className="flex items-center gap-5 pb-4 border-b border-border">
-            <Avatar src={avatarUrl} alt={fullName} size="xl" />
+            <Avatar src={avatarUrl || undefined} alt={fullName || "User"} size="xl" />
             <div>
               <p className="text-sm font-semibold text-text">Profile Picture</p>
               <p className="text-xs text-text-muted mt-0.5">
@@ -120,7 +163,9 @@ export default function CustomerSettingsPage() {
           </FormField>
 
           <div className="pt-2">
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isSaving}>
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </form>
       </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   User,
@@ -32,6 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { mockRequests, mockReviews, mockProfessionals } from "@/lib/data/mock-data";
 import { ServiceRequestWithDetails } from "@/types";
+import { getCurrentUserProfileAction, updateCurrentUserProfileAction } from "@/app/actions/auth";
 
 export default function SelfProfileActivityPage() {
   // Mode toggle: Customer view vs Professional view
@@ -42,30 +43,61 @@ export default function SelfProfileActivityPage() {
   const [workFilter, setWorkFilter] = useState<"all" | "completed" | "in_progress" | "pending">("all");
 
   // Profile data state
-  const [fullName, setFullName] = useState("Sarah Miller");
-  const [email] = useState("sarah.miller@gmail.com");
-  const [phone, setPhone] = useState("+1 (206) 555-9011");
-  const [location, setLocation] = useState("Seattle, WA (Ballard)");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [location, setLocation] = useState("Local Area");
   const [bio, setBio] = useState(
-    "Homeowner in Ballard. Passionate about sustainable home renovations, craftsmanship, and working with verified local tradespeople."
+    "Verified LocalWork customer."
   );
-  const [avatarUrl] = useState(
-    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80"
-  );
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [tempName, setTempName] = useState(fullName);
-  const [tempPhone, setTempPhone] = useState(phone);
+  const [tempName, setTempName] = useState("");
+  const [tempPhone, setTempPhone] = useState("");
   const [tempLocation, setTempLocation] = useState(location);
   const [tempBio, setTempBio] = useState(bio);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Load authenticated user profile on mount
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted) {
+        if (res.profile) {
+          setCurrentUserId(res.profile.id);
+          setFullName(res.profile.full_name || "Customer");
+          setEmail(res.profile.email || "");
+          setPhone(res.profile.phone || "");
+          setAvatarUrl(res.profile.avatar_url || null);
+          setTempName(res.profile.full_name || "Customer");
+          setTempPhone(res.profile.phone || "");
+          if (res.profile.role === "professional") {
+            setProfileRole("professional");
+          }
+        } else if (res.user) {
+          setCurrentUserId(res.user.id);
+          setEmail(res.user.email || "");
+          const fallback = res.user.email?.split("@")[0] || "Customer";
+          setFullName(fallback);
+          setTempName(fallback);
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Selected work item for detail modal
   const [selectedWork, setSelectedWork] = useState<ServiceRequestWithDetails | null>(null);
 
   // Filter requests
-  const customerRequests = mockRequests;
+  const customerRequests = currentUserId
+    ? mockRequests.filter((r) => r.customer_id === currentUserId)
+    : mockRequests;
   const filteredWork = customerRequests.filter((r) => {
     if (workFilter === "completed") return r.status === "completed";
     if (workFilter === "in_progress") return r.status === "in_progress" || r.status === "accepted";
@@ -77,15 +109,24 @@ export default function SelfProfileActivityPage() {
   const completedCount = customerRequests.filter((r) => r.status === "completed").length;
   const activeCount = customerRequests.filter((r) => r.status === "pending" || r.status === "in_progress" || r.status === "accepted").length;
   const totalSpent = customerRequests.reduce((sum, r) => sum + (r.budget || 0), 0);
-  const myReviews = mockReviews.filter((r) => r.customer_id === "cust-1" || r.customer.full_name === "Sarah Miller");
+  const myReviews = currentUserId
+    ? mockReviews.filter((r) => r.customer_id === currentUserId)
+    : [];
 
   // Handle Edit Submit
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
     setFullName(tempName);
     setPhone(tempPhone);
     setLocation(tempLocation);
     setBio(tempBio);
+
+    await updateCurrentUserProfileAction({
+      full_name: tempName,
+      phone: tempPhone,
+      avatar_url: avatarUrl,
+    });
+
     setSaveSuccess(true);
     setTimeout(() => {
       setSaveSuccess(false);
@@ -125,10 +166,7 @@ export default function SelfProfileActivityPage() {
         {/* Perspective Toggle */}
         <div className="flex items-center gap-2 bg-input-bg p-1 rounded-xl border border-border">
           <button
-            onClick={() => {
-              setProfileRole("customer");
-              setFullName("Sarah Miller");
-            }}
+            onClick={() => setProfileRole("customer")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               profileRole === "customer"
                 ? "bg-gradient-to-r from-primary to-teal text-white shadow-sm font-bold"
@@ -138,10 +176,7 @@ export default function SelfProfileActivityPage() {
             Customer Profile
           </button>
           <button
-            onClick={() => {
-              setProfileRole("professional");
-              setFullName("Marcus Vance");
-            }}
+            onClick={() => setProfileRole("professional")}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               profileRole === "professional"
                 ? "bg-gradient-to-r from-primary to-teal text-white shadow-sm font-bold"

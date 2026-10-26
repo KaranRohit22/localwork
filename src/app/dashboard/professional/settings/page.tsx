@@ -1,15 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Lock, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
+import { getCurrentUserProfileAction, updateCurrentUserProfileAction } from "@/app/actions/auth";
 
 export default function ProfessionalSettingsPage() {
-  const [fullName, setFullName] = useState("Marcus Vance");
-  const [email] = useState("marcus.vance@localwork.app");
-  const [phone, setPhone] = useState("+1 (206) 555-0192");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted) {
+        if (res.authenticated && res.profile) {
+          setFullName(res.profile.full_name || "");
+          setEmail(res.profile.email || "");
+          setPhone(res.profile.phone || "");
+        } else {
+          setFullName("Marcus Vance");
+          setEmail("marcus.vance@localwork.app");
+          setPhone("+1 (206) 555-0192");
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   const [profileSaved, setProfileSaved] = useState(false);
 
   // Password state
@@ -19,8 +40,12 @@ export default function ProfessionalSettingsPage() {
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    await updateCurrentUserProfileAction({
+      full_name: fullName,
+      phone: phone || null,
+    });
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 3000);
   };

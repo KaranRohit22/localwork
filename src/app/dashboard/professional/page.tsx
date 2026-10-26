@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Inbox,
@@ -20,9 +20,23 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { mockRequests } from "@/lib/data/mock-data";
 import { ServiceRequestWithDetails, RequestStatus } from "@/types";
+import { getCurrentUserProfileAction } from "@/app/actions/auth";
 
 export default function ProfessionalDashboardPage() {
   const [incomingRequests, setIncomingRequests] = useState<ServiceRequestWithDetails[]>(mockRequests);
+  const [proName, setProName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted && res.authenticated && res.profile?.full_name) {
+        setProName(res.profile.full_name);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleStatusChange = (id: string, newStatus: RequestStatus) => {
     setIncomingRequests((prev) =>
@@ -45,7 +59,7 @@ export default function ProfessionalDashboardPage() {
             Verified Marketplace Partner
           </div>
           <h1 className="text-2xl sm:text-3xl font-extrabold">
-            Welcome back, Marcus!
+            {proName ? `Welcome back, ${proName.split(" ")[0]}!` : "Welcome to Pro Dashboard!"}
           </h1>
           <p className="text-white/70 text-sm mt-1 max-w-xl">
             You have <strong className="text-white">{pendingRequests.length} pending request</strong> awaiting review. Customers are browsing your electrical services in Greater Seattle.

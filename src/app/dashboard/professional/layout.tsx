@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -21,6 +21,7 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUserProfileAction } from "@/app/actions/auth";
 
 const proNavItems = [
   { href: "/dashboard/professional", label: "Overview", icon: LayoutDashboard },
@@ -41,7 +42,23 @@ export default function ProfessionalDashboardLayout({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
+  const [proProfile, setProProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
   const supabase = createClient();
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted && res.authenticated && res.profile) {
+        setProProfile({
+          full_name: res.profile.full_name || "Professional",
+          avatar_url: res.profile.avatar_url,
+        });
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -183,13 +200,13 @@ export default function ProfessionalDashboardLayout({
 
           <div className="flex items-center gap-3">
             <Avatar
-              src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"
-              alt="Marcus Vance"
+              src={proProfile?.avatar_url || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80"}
+              alt={proProfile?.full_name || "Professional Profile"}
               size="sm"
             />
             <div className="text-left">
-              <p className="text-sm font-semibold text-text leading-none">Marcus Vance</p>
-              <p className="text-[11px] text-text-muted mt-0.5">Master Electrician</p>
+              <p className="text-sm font-semibold text-text leading-none">{proProfile?.full_name || "Marcus Vance"}</p>
+              <p className="text-[11px] text-text-muted mt-0.5">Verified Professional</p>
             </div>
           </div>
         </header>

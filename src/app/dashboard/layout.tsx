@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
@@ -21,6 +21,8 @@ import { Logo } from "@/components/ui/logo";
 import { Avatar } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { createClient } from "@/lib/supabase/client";
+import { getCurrentUserProfileAction, signOutUserAction } from "@/app/actions/auth";
+import { Profile } from "@/types";
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
@@ -40,11 +42,26 @@ export default function CustomerDashboardLayout({
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const supabase = createClient();
 
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted && res.profile) {
+        setProfile(res.profile);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const handleSignOut = async () => {
+    await signOutUserAction();
     await supabase.auth.signOut();
     router.push("/");
+    router.refresh();
   };
 
   return (
@@ -158,13 +175,18 @@ export default function CustomerDashboardLayout({
               <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-primary" />
             </Link>
 
-            <Link href="/dashboard/settings" className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+            >
               <Avatar
-                src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80"
-                alt="Sarah Miller"
+                src={profile?.avatar_url || undefined}
+                alt={profile?.full_name || "Customer"}
                 size="sm"
               />
-              <span className="text-sm font-semibold text-text">Sarah Miller</span>
+              <span className="text-sm font-semibold text-text">
+                {profile?.full_name || "Customer"}
+              </span>
             </Link>
           </div>
         </header>

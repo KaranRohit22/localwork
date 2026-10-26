@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   CheckCircle2,
   Calendar,
   MapPin,
   Star,
+  Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -14,13 +15,94 @@ import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { FormField } from "@/components/ui/form-field";
 import { Textarea } from "@/components/ui/textarea";
+import { EmptyState } from "@/components/ui/empty-state";
 import { InteractiveStarRating } from "@/components/ui/star-rating";
 import { mockRequests } from "@/lib/data/mock-data";
 import { ServiceRequestWithDetails } from "@/types";
+import { getCurrentUserProfileAction, getCurrentUserRequestsAction } from "@/app/actions/auth";
 
 export default function CustomerRequestsPage() {
   const [requestsList, setRequestsList] = useState<ServiceRequestWithDetails[]>(mockRequests);
   const [filterTab, setFilterTab] = useState<"all" | "active" | "completed">("all");
+
+  useEffect(() => {
+    let isMounted = true;
+    getCurrentUserProfileAction().then((res) => {
+      if (isMounted) {
+        if (res.authenticated && res.user) {
+          getCurrentUserRequestsAction().then((reqRes) => {
+            if (isMounted) {
+              if (reqRes.authenticated && reqRes.requests.length > 0) {
+                const mapped: ServiceRequestWithDetails[] = reqRes.requests.map((r) => ({
+                  id: r.id,
+                  customer_id: res.user!.id,
+                  professional_id: "pro-1",
+                  category_id: null,
+                  title: r.title,
+                  description: r.description,
+                  location: r.city || "Local",
+                  preferred_date: r.preferred_date,
+                  budget: r.budget,
+                  status: (r.status as ServiceRequestWithDetails["status"]) || "pending",
+                  status_note: null,
+                  created_at: r.created_at,
+                  updated_at: r.created_at,
+                  customer: res.profile || {
+                    id: res.user!.id,
+                    email: res.user!.email || "",
+                    full_name: "Customer",
+                    avatar_url: null,
+                    phone: null,
+                    role: "customer",
+                    is_active: true,
+                    created_at: "",
+                    updated_at: "",
+                  },
+                  professional: {
+                    id: "pro-1",
+                    email: "pro@example.com",
+                    full_name: "Local Service Pro",
+                    avatar_url: null,
+                    phone: null,
+                    role: "professional",
+                    is_active: true,
+                    created_at: "",
+                    updated_at: "",
+                  },
+                  professional_profile: {
+                    id: "prof-1",
+                    user_id: "pro-1",
+                    headline: "Verified Professional",
+                    bio: null,
+                    hourly_rate: 65,
+                    years_experience: 5,
+                    city: r.city || "Local Area",
+                    service_area: "Metropolitan Area",
+                    is_available: true,
+                    verification_status: "approved",
+                    verified_at: null,
+                    verified_by: null,
+                    rejection_reason: null,
+                    skills: [],
+                    created_at: "",
+                    updated_at: "",
+                  },
+                  category: null,
+                  review: null,
+                }));
+                setRequestsList(mapped);
+              } else {
+                setRequestsList([]);
+              }
+            }
+          });
+        }
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Selected request for detail modal
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithDetails | null>(null);
@@ -153,97 +235,107 @@ export default function CustomerRequestsPage() {
 
       {/* Requests List */}
       <div className="space-y-4">
-        {filteredRequests.map((req) => (
-          <div
-            key={req.id}
-            className="bg-white rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover transition-all"
-          >
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
-              <div className="flex items-start gap-4">
-                <Avatar
-                  src={req.professional.avatar_url}
-                  alt={req.professional.full_name}
-                  size="lg"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="text-lg font-bold text-text">{req.title}</h3>
-                    {getStatusBadge(req.status)}
-                  </div>
-                  <p className="text-sm text-text-secondary">
-                    Professional:{" "}
-                    <Link
-                      href={`/professionals/${req.professional_profile?.id || "pro-1"}`}
-                      className="font-semibold text-primary hover:underline"
-                    >
-                      {req.professional.full_name}
-                    </Link>
-                  </p>
-                  <p className="text-xs text-text-muted line-clamp-2 max-w-2xl mt-1">
-                    {req.description}
-                  </p>
-                  <div className="flex items-center gap-4 pt-2 text-xs text-text-muted flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {req.location}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {req.preferred_date ? new Date(req.preferred_date).toLocaleDateString() : "Flexible"}
-                    </span>
-                    {req.budget && (
-                      <>
-                        <span>•</span>
-                        <span className="font-semibold text-text">Budget: ${req.budget}</span>
-                      </>
-                    )}
+        {filteredRequests.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="No service requests found"
+            description="You don't have any requests in this category yet. Find a local professional to get started!"
+            actionLabel="Browse Professionals"
+            actionHref="/professionals"
+          />
+        ) : (
+          filteredRequests.map((req) => (
+            <div
+              key={req.id}
+              className="bg-white rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover transition-all"
+            >
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  <Avatar
+                    src={req.professional.avatar_url}
+                    alt={req.professional.full_name}
+                    size="lg"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="text-lg font-bold text-text">{req.title}</h3>
+                      {getStatusBadge(req.status)}
+                    </div>
+                    <p className="text-sm text-text-secondary">
+                      Professional:{" "}
+                      <Link
+                        href={`/professionals/${req.professional_profile?.id || "pro-1"}`}
+                        className="font-semibold text-primary hover:underline"
+                      >
+                        {req.professional.full_name}
+                      </Link>
+                    </p>
+                    <p className="text-xs text-text-muted line-clamp-2 max-w-2xl mt-1">
+                      {req.description}
+                    </p>
+                    <div className="flex items-center gap-4 pt-2 text-xs text-text-muted flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {req.location}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {req.preferred_date ? new Date(req.preferred_date).toLocaleDateString() : "Flexible"}
+                      </span>
+                      {req.budget && (
+                        <>
+                          <span>•</span>
+                          <span className="font-semibold text-text">Budget: ${req.budget}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setSelectedRequest(req)}
-                >
-                  View Details
-                </Button>
-
-                {req.status === "completed" && !req.review && (
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0 self-end lg:self-center">
                   <Button
+                    variant="outline"
                     size="sm"
-                    className="bg-amber text-navy hover:bg-amber/90 font-semibold"
-                    onClick={() => setReviewRequest(req)}
+                    onClick={() => setSelectedRequest(req)}
                   >
-                    <Star className="h-4 w-4 mr-1.5 fill-navy" />
-                    Leave Review
+                    View Details
                   </Button>
-                )}
 
-                {req.review && (
-                  <span className="text-xs font-semibold text-success bg-success-light px-3 py-1.5 rounded-lg flex items-center gap-1">
-                    <CheckCircle2 className="h-3.5 w-3.5" />
-                    Reviewed (★ {req.review.rating})
-                  </span>
-                )}
+                  {req.status === "completed" && !req.review && (
+                    <Button
+                      size="sm"
+                      className="bg-amber text-navy hover:bg-amber/90 font-semibold"
+                      onClick={() => setReviewRequest(req)}
+                    >
+                      <Star className="h-4 w-4 mr-1.5 fill-navy" />
+                      Leave Review
+                    </Button>
+                  )}
 
-                {["pending", "accepted"].includes(req.status) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-error hover:bg-error-light/50"
-                    onClick={() => handleCancelRequest(req.id)}
-                  >
-                    Cancel
-                  </Button>
-                )}
+                  {req.review && (
+                    <span className="text-xs font-semibold text-success bg-success-light px-3 py-1.5 rounded-lg flex items-center gap-1">
+                      <CheckCircle2 className="h-3.5 w-3.5" />
+                      Reviewed (★ {req.review.rating})
+                    </span>
+                  )}
+
+                  {["pending", "accepted"].includes(req.status) && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-error hover:bg-error-light/50"
+                      onClick={() => handleCancelRequest(req.id)}
+                    >
+                      Cancel
+                    </Button>
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))
+        )}
       </div>
 
       {/* ============================================================
