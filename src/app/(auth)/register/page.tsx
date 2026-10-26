@@ -11,13 +11,12 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Card } from "@/components/ui/card";
 import { customerRegisterSchema, type CustomerRegisterInput } from "@/validations";
-import { createClient } from "@/lib/supabase/client";
+import { signUpCustomerAction } from "@/app/actions/auth";
 
 export default function CustomerRegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -30,69 +29,25 @@ export default function CustomerRegisterPage() {
   const onSubmit = async (data: CustomerRegisterInput) => {
     setError(null);
     try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const isPlaceholder = !url || url.includes("placeholder-project");
-
-      if (isPlaceholder) {
-        // Fallback for preview/demo when Supabase credentials are not connected in Vercel
-        if (typeof window !== "undefined") {
-          localStorage.setItem(
-            "localwork_demo_user",
-            JSON.stringify({
-              id: "demo-cust-1",
-              full_name: data.full_name,
-              email: data.email,
-              role: "customer",
-            })
-          );
-        }
-        setSuccess(true);
-        return;
-      }
-
-      const { error: authError } = await supabase.auth.signUp({
+      const result = await signUpCustomerAction({
         email: data.email,
         password: data.password,
-        options: {
-          data: {
-            full_name: data.full_name,
-            role: "customer",
-          },
-        },
+        full_name: data.full_name,
+        phone: data.phone,
       });
 
-      if (authError) {
-        if (authError.message.includes("Failed to fetch")) {
-          setError(
-            "Unable to reach Supabase. Please verify NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel settings and redeploy."
-          );
-        } else {
-          setError(authError.message);
-        }
+      if (!result.success) {
+        setError(result.error || "Failed to create account. Please try again.");
         return;
-      }
-
-      // Update phone if provided
-      if (data.phone) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase
-            .from("profiles")
-            .update({ phone: data.phone })
-            .eq("id", user.id);
-        }
       }
 
       setSuccess(true);
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "";
-      if (message.includes("Failed to fetch") || message.includes("fetch")) {
-        setError(
-          "Connection failed: Supabase URL is unreachable. Please verify your Vercel Environment Variables."
-        );
-      } else {
-        setError("An unexpected error occurred. Please try again.");
-      }
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred during registration. Please try again."
+      );
     }
   };
 

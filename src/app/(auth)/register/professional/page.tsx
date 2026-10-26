@@ -18,11 +18,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
-import { createClient } from "@/lib/supabase/client";
 import {
   professionalRegisterSchema,
   type ProfessionalRegisterInput,
 } from "@/validations";
+import { signUpProfessionalAction } from "@/app/actions/auth";
 
 export default function ProfessionalRegisterPage() {
   const router = useRouter();
@@ -30,7 +30,6 @@ export default function ProfessionalRegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState(false);
-  const supabase = createClient();
 
   const {
     register,
@@ -54,78 +53,35 @@ export default function ProfessionalRegisterPage() {
     setServerError(null);
 
     try {
-      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-      const isPlaceholder = !url || url.includes("placeholder-project");
-
-      if (isPlaceholder) {
-        // Mock fallback for preview mode without Supabase connection
-        setSuccessMessage(true);
-        setTimeout(() => {
-          router.push("/dashboard/professional");
-        }, 1500);
-        return;
-      }
-
-      // 1. Sign up user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
+      const result = await signUpProfessionalAction({
         email: data.email,
         password: data.password,
-        options: {
-          data: {
-            full_name: data.full_name,
-            role: "professional",
-            phone: data.phone || null,
-          },
-        },
+        full_name: data.full_name,
+        phone: data.phone,
+        headline: data.headline,
+        city: data.city,
+        service_area: data.service_area,
       });
 
-      if (authError) {
-        if (authError.message.includes("Failed to fetch")) {
-          setServerError(
-            "Unable to reach Supabase. Please verify NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY in Vercel settings and redeploy."
-          );
-        } else {
-          setServerError(authError.message);
-        }
+      if (!result.success) {
+        setServerError(
+          result.error ||
+            "Failed to create professional account. Please try again."
+        );
         return;
       }
 
-      if (authData.user) {
-        // 2. Insert into profiles (if not handled by trigger)
-        await supabase.from("profiles").upsert({
-          id: authData.user.id,
-          email: data.email,
-          full_name: data.full_name,
-          phone: data.phone || null,
-          role: "professional",
-          is_active: true,
-        });
-
-        // 3. Insert professional profile details
-        await supabase.from("professionals").upsert({
-          user_id: authData.user.id,
-          headline: data.headline,
-          city: data.city,
-          service_area: data.service_area,
-          years_experience: 1,
-          verification_status: "pending",
-          is_available: true,
-          skills: [],
-        });
-
-        setSuccessMessage(true);
-
-        // Redirect after brief delay
-        setTimeout(() => {
-          router.push("/dashboard/professional");
-        }, 1500);
-      }
-    } catch {
-      // Offline fallback / demo redirect
       setSuccessMessage(true);
+
       setTimeout(() => {
         router.push("/dashboard/professional");
       }, 1500);
+    } catch (err: unknown) {
+      setServerError(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred during registration. Please try again."
+      );
     }
   };
 
