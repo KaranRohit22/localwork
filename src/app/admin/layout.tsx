@@ -38,6 +38,24 @@ const adminNavItems = [
   { href: "/admin/reviews", label: "Review Moderation", icon: Star },
 ];
 
+function persistAdminSession() {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("localwork_admin_authorized", "true");
+    localStorage.setItem("localwork_admin_authorized", "true");
+    document.cookie =
+      "localwork_admin_authorized=true; path=/; max-age=86400; SameSite=Lax";
+  }
+}
+
+function clearAdminSession() {
+  if (typeof window !== "undefined") {
+    sessionStorage.removeItem("localwork_admin_authorized");
+    localStorage.removeItem("localwork_admin_authorized");
+    document.cookie =
+      "localwork_admin_authorized=; path=/; max-age=0; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+  }
+}
+
 export default function AdminDashboardLayout({
   children,
 }: {
@@ -58,11 +76,12 @@ export default function AdminDashboardLayout({
   useEffect(() => {
     const checkAdminStatus = async () => {
       try {
-        // 1. Check local session storage key
+        // 1. Check local session storage or admin cookie
         const storedAuth =
           typeof window !== "undefined"
             ? sessionStorage.getItem("localwork_admin_authorized") ||
-              localStorage.getItem("localwork_admin_authorized")
+              localStorage.getItem("localwork_admin_authorized") ||
+              (document.cookie.includes("localwork_admin_authorized=true") ? "true" : null)
             : null;
 
         if (storedAuth === "true") {
@@ -82,7 +101,7 @@ export default function AdminDashboardLayout({
 
           if (profile?.role === "admin") {
             setIsAuthorized(true);
-            sessionStorage.setItem("localwork_admin_authorized", "true");
+            persistAdminSession();
             setIsChecking(false);
             return;
           }
@@ -118,10 +137,7 @@ export default function AdminDashboardLayout({
       input.toLowerCase() === "localworkadmin2026!"
     ) {
       setUnlockSuccess(true);
-      if (typeof window !== "undefined") {
-        sessionStorage.setItem("localwork_admin_authorized", "true");
-        localStorage.setItem("localwork_admin_authorized", "true");
-      }
+      persistAdminSession();
       setTimeout(() => {
         setIsAuthorized(true);
         setUnlockSuccess(false);
@@ -132,13 +148,11 @@ export default function AdminDashboardLayout({
   };
 
   const handleSignOut = async () => {
-    if (typeof window !== "undefined") {
-      sessionStorage.removeItem("localwork_admin_authorized");
-      localStorage.removeItem("localwork_admin_authorized");
-    }
+    clearAdminSession();
     await supabase.auth.signOut();
     setIsAuthorized(false);
     router.push("/");
+    router.refresh();
   };
 
   // Loading state

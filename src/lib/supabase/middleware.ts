@@ -43,22 +43,16 @@ export async function updateSession(request: NextRequest) {
       data: { user },
     } = await supabase.auth.getUser();
 
-    // Protected routes
-    const protectedPaths = ["/dashboard", "/admin"];
-    const isProtected = protectedPaths.some((path) =>
-      request.nextUrl.pathname.startsWith(path)
-    );
+    // Protected routes (Customer & Professional Dashboard)
+    const isDashboard = request.nextUrl.pathname.startsWith("/dashboard");
+    const hasAdminCookie =
+      request.cookies.get("localwork_admin_authorized")?.value === "true";
 
-    if (isProtected && !user) {
+    if (isDashboard && !user && !hasAdminCookie) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/login";
       redirectUrl.searchParams.set("redirect", request.nextUrl.pathname);
       return NextResponse.redirect(redirectUrl);
-    }
-
-    // Admin routes
-    if (request.nextUrl.pathname.startsWith("/admin") && user) {
-      // Check admin role via profile in the layout
     }
 
     // Auth pages redirect if already logged in

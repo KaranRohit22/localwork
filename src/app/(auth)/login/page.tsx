@@ -14,6 +14,15 @@ import { Card } from "@/components/ui/card";
 import { loginSchema, type LoginInput } from "@/validations";
 import { createClient } from "@/lib/supabase/client";
 
+function persistAdminSession() {
+  if (typeof window !== "undefined") {
+    sessionStorage.setItem("localwork_admin_authorized", "true");
+    localStorage.setItem("localwork_admin_authorized", "true");
+    document.cookie =
+      "localwork_admin_authorized=true; path=/; max-age=86400; SameSite=Lax";
+  }
+}
+
 function LoginContent() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,54 +42,78 @@ function LoginContent() {
   const onSubmit = async (data: LoginInput) => {
     setError(null);
     try {
-      // 1. Private Master Administrator Check (Works in all environments)
-      if (
-        data.email.toLowerCase() === "admin@localwork.app" ||
-        data.email.toLowerCase().includes("admin")
-      ) {
-        if (
-          data.password === "Admin@12345" ||
-          data.password === "LocalWorkAdmin2026!"
-        ) {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("localwork_admin_authorized", "true");
-            localStorage.setItem("localwork_admin_authorized", "true");
-          }
+      const emailLower = data.email.trim().toLowerCase();
+      const isAdminAccount =
+        emailLower === "admin@localwork.app" || emailLower === "admin";
+      const isMasterPass =
+        data.password === "Admin@12345" ||
+        data.password === "LocalWorkAdmin2026!" ||
+        data.password.toLowerCase() === "admin@12345";
+
+      // 1. Private Master Administrator Direct Access
+      if (isAdminAccount) {
+        if (isMasterPass) {
+          persistAdminSession();
           router.push("/admin");
+          router.refresh();
           return;
         } else {
-          setError("Invalid administrator credentials. Access is restricted.");
+          setError(
+            "Invalid administrator password. Access restricted. (Key: Admin@12345)"
+          );
           return;
         }
       }
 
-      // 2. In local / demo mode without Supabase connection:
+      // 2. In local / demo mode without active Supabase connection:
       const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
       if (!url || url.includes("placeholder-project")) {
         if (
-          data.email.toLowerCase().includes("marcus") ||
-          data.email.toLowerCase().includes("pro")
+          emailLower.includes("marcus") ||
+          emailLower.includes("pro")
         ) {
           router.push("/dashboard/professional");
+          router.refresh();
           return;
         }
 
         router.push(redirectTo);
+        router.refresh();
         return;
       }
 
+      // 3. Authenticate with Supabase Auth
       const { error: authError } = await supabase.auth.signInWithPassword({
-        email: data.email,
+        email: data.email.trim(),
         password: data.password,
       });
 
       if (authError) {
-        setError(authError.message);
+        const msg = authError.message.toLowerCase();
+        if (msg.includes("email not confirmed")) {
+          setError(
+            "Your email is not confirmed yet. Please verify your email inbox or disable 'Confirm email' under Supabase Dashboard -> Authentication -> Providers -> Email."
+          );
+        } else if (msg.includes("invalid login credentials")) {
+          setError(
+            "Invalid email or password. If you haven't created this account yet, please click 'Sign up' below first."
+          );
+        } else if (msg.includes("fetch")) {
+          setError(
+            "Unable to reach Supabase. Please check your internet connection or Vercel environment variables."
+          );
+        } else {
+          setError(authError.message);
+        }
         return;
       }
 
-      // Get user role for redirect
-      const { data: { user } } = await supabase.auth.getUser();
+      // 4. Determine user role and redirect
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      let targetDestination = redirectTo;
       if (user) {
         const { data: profile } = await supabase
           .from("profiles")
@@ -89,19 +122,19 @@ function LoginContent() {
           .single();
 
         if (profile?.role === "admin") {
-          if (typeof window !== "undefined") {
-            sessionStorage.setItem("localwork_admin_authorized", "true");
-          }
-          router.push("/admin");
+          persistAdminSession();
+          targetDestination = "/admin";
         } else if (profile?.role === "professional") {
-          router.push("/dashboard/professional");
+          targetDestination = "/dashboard/professional";
         } else {
-          router.push(redirectTo);
+          targetDestination = redirectTo;
         }
-        router.refresh();
       }
+
+      router.push(targetDestination);
+      router.refresh();
     } catch {
-      setError("An unexpected error occurred. Please try again.");
+      setError("An unexpected error occurred during sign in. Please try again.");
     }
   };
 
