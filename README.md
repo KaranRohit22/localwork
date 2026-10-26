@@ -106,7 +106,7 @@ Configure your Supabase credentials in `.env.local`:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=https://localwork-sepia.vercel.app
 NEXT_PUBLIC_APP_NAME=LocalWork
 ```
 *(Note: If no Supabase instance is configured, LocalWork automatically uses its built-in realistic mock data layer for development and testing.)*
