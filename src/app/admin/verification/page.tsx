@@ -1,24 +1,29 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Check,
   X,
   Eye,
   MapPin,
   Clock,
+  ShieldCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FormField } from "@/components/ui/form-field";
 import { Textarea } from "@/components/ui/textarea";
-import { mockProfessionals } from "@/lib/data/mock-data";
 import { ProfessionalWithProfile } from "@/types";
+import {
+  getAdminVerificationQueueAction,
+  updateAdminProVerificationAction,
+} from "@/app/actions/admin";
 
 export default function AdminVerificationPage() {
-  const [pros, setPros] = useState<ProfessionalWithProfile[]>(mockProfessionals);
+  const [pros, setPros] = useState<ProfessionalWithProfile[]>([]);
   const [tab, setTab] = useState<"pending" | "approved" | "all">("pending");
 
   // Inspect Modal
@@ -28,13 +33,30 @@ export default function AdminVerificationPage() {
   const [rejectingPro, setRejectingPro] = useState<ProfessionalWithProfile | null>(null);
   const [rejectReason, setRejectReason] = useState("");
 
+  useEffect(() => {
+    let isMounted = true;
+    getAdminVerificationQueueAction().then((pros) => {
+      if (isMounted) {
+        setPros(pros || []);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshPros = async () => {
+    const pros = await getAdminVerificationQueueAction();
+    setPros(pros || []);
+  };
+
   const filteredPros = pros.filter((p) => {
     if (tab === "pending") return p.verification_status === "pending";
     if (tab === "approved") return p.verification_status === "approved";
     return true;
   });
 
-  const handleApprove = (id: string) => {
+  const handleApprove = async (id: string) => {
     setPros((prev) =>
       prev.map((p) =>
         p.id === id
@@ -42,7 +64,7 @@ export default function AdminVerificationPage() {
               ...p,
               verification_status: "approved",
               verified_at: new Date().toISOString(),
-              verified_by: "super_admin",
+              verified_by: "admin",
             }
           : p
       )
@@ -50,15 +72,18 @@ export default function AdminVerificationPage() {
     if (inspectPro && inspectPro.id === id) {
       setInspectPro(null);
     }
+    await updateAdminProVerificationAction({ proId: id, status: "approved" });
+    refreshPros();
   };
 
-  const handleConfirmReject = (e: React.FormEvent) => {
+  const handleConfirmReject = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rejectingPro) return;
 
+    const proId = rejectingPro.id;
     setPros((prev) =>
       prev.map((p) =>
-        p.id === rejectingPro.id
+        p.id === proId
           ? {
               ...p,
               verification_status: "rejected",
@@ -69,7 +94,13 @@ export default function AdminVerificationPage() {
     );
 
     setRejectingPro(null);
+    await updateAdminProVerificationAction({
+      proId,
+      status: "rejected",
+      rejectionReason: rejectReason,
+    });
     setRejectReason("");
+    refreshPros();
   };
 
   return (
@@ -113,7 +144,14 @@ export default function AdminVerificationPage() {
 
       {/* Pros Queue List */}
       <div className="space-y-4">
-        {filteredPros.map((pro) => (
+        {filteredPros.length === 0 ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="Queue is empty"
+            description="There are no professional profiles matching the current tab filter."
+          />
+        ) : (
+          filteredPros.map((pro) => (
           <div
             key={pro.id}
             className="bg-white rounded-2xl p-6 border border-border shadow-card flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
@@ -206,7 +244,8 @@ export default function AdminVerificationPage() {
               )}
             </div>
           </div>
-        ))}
+        ))
+      )}
       </div>
 
       {/* Inspect Modal */}

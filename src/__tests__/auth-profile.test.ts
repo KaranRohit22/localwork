@@ -17,11 +17,11 @@ describe("Customer Profile Isolation & Dynamic Session Resolution", () => {
     };
 
     // Profile resolver simulating getCurrentUserProfileAction self-healing
-    const resolveProfile = (user: typeof userA | null, dbProfiles: Record<string, any>) => {
+    const resolveProfile = (user: typeof userA | null, dbProfiles: Record<string, unknown>) => {
       if (!user) {
         return { authenticated: false, profile: null };
       }
-      let profile = dbProfiles[user.id];
+      let profile = dbProfiles[user.id] as Record<string, unknown> | undefined;
       if (!profile) {
         profile = {
           id: user.id,
@@ -34,7 +34,7 @@ describe("Customer Profile Isolation & Dynamic Session Resolution", () => {
       return { authenticated: true, profile };
     };
 
-    const mockDb: Record<string, any> = {};
+    const mockDb: Record<string, unknown> = {};
 
     // Test account 1: Alex Turner
     const resA = resolveProfile(userA, mockDb);
@@ -77,7 +77,7 @@ describe("Customer Profile Isolation & Dynamic Session Resolution", () => {
   });
 
   it("ensures authenticated users with 0 requests see empty list rather than demo requests", () => {
-    const userRequests: any[] = [];
+    const userRequests: unknown[] = [];
     const mockDemoRequests = [{ id: "req-1", title: "Fix Leaking Kitchen Sink" }];
 
     // If authenticated:

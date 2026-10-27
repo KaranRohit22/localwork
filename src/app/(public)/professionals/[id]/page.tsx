@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use, Suspense } from "react";
+import { useState, use, useEffect, Suspense } from "react";
 import Link from "next/link";
 import { notFound, useSearchParams } from "next/navigation";
 import {
@@ -15,6 +15,7 @@ import {
   Briefcase,
   CheckCircle2,
   MessageSquare,
+  AlertCircle,
 } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,12 @@ import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { mockProfessionals, mockReviews } from "@/lib/data/mock-data";
+import {
+  createServiceRequestAction,
+  toggleFavoriteAction,
+  getUserFavoriteIdsAction,
+  submitReportAction,
+} from "@/app/actions/services";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -55,11 +62,27 @@ function ProfessionalProfileContent({ params }: PageProps) {
     professional.hourly_rate ? `${professional.hourly_rate * 4}` : "300"
   );
   const [requestSubmitted, setRequestSubmitted] = useState(false);
+  const [isSubmittingRequest, setIsSubmittingRequest] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
   // Report form state
   const [reportReason, setReportReason] = useState("inaccurate_info");
   const [reportDetails, setReportDetails] = useState("");
   const [reportSubmitted, setReportSubmitted] = useState(false);
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
+
+  // Check initial favorite status
+  useEffect(() => {
+    let isMounted = true;
+    getUserFavoriteIdsAction().then((favIds) => {
+      if (isMounted && favIds.includes(professional.id)) {
+        setIsFavorite(true);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [professional.id]);
 
   // Relevant reviews for this pro
   const reviews = mockReviews.filter(
@@ -74,16 +97,48 @@ function ProfessionalProfileContent({ params }: PageProps) {
     }
   };
 
-  const handleRequestSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    setRequestSubmitted(true);
-    setTimeout(() => {
-      // simulate completed request
-    }, 1000);
+  const handleToggleFav = async () => {
+    const res = await toggleFavoriteAction(professional.id);
+    if (res.success && res.data) {
+      setIsFavorite(res.data.isFavorite);
+    }
   };
 
-  const handleReportSubmit = (e: React.FormEvent) => {
+  const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setRequestError(null);
+    setIsSubmittingRequest(true);
+
+    const result = await createServiceRequestAction({
+      professional_id: professional.id,
+      title: requestTitle,
+      description: requestDescription,
+      location: requestLocation,
+      preferred_date: requestDate || null,
+      budget: requestBudget ? Number(requestBudget) : null,
+      category_id: professional.categories[0]?.id || null,
+    });
+
+    setIsSubmittingRequest(false);
+
+    if (!result.success) {
+      setRequestError(result.error || "Failed to submit request.");
+      return;
+    }
+
+    setRequestSubmitted(true);
+  };
+
+  const handleReportSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingReport(true);
+    await submitReportAction({
+      target_type: "profile",
+      target_id: professional.id,
+      reason: reportReason,
+      description: reportDetails,
+    });
+    setIsSubmittingReport(false);
     setReportSubmitted(true);
   };
 
@@ -418,7 +473,7 @@ function ProfessionalProfileContent({ params }: PageProps) {
 
                 <Button
                   variant="outline"
-                  onClick={() => setIsFavorite(!isFavorite)}
+                  onClick={handleToggleFav}
                   className="w-full"
                 >
                   <Heart
@@ -483,6 +538,13 @@ function ProfessionalProfileContent({ params }: PageProps) {
           </div>
         ) : (
           <form onSubmit={handleRequestSubmit} className="space-y-4">
+            {requestError && (
+              <div className="flex items-center gap-2 p-3.5 rounded-xl bg-error-light text-error text-xs font-semibold">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{requestError}</span>
+              </div>
+            )}
+
             <FormField label="Service / Job Title" required>
               <Input
                 placeholder="e.g. Install new ceiling fan and dimmer switch"
@@ -538,11 +600,14 @@ function ProfessionalProfileContent({ params }: PageProps) {
               <Button
                 type="button"
                 variant="outline"
+                disabled={isSubmittingRequest}
                 onClick={() => setIsRequestModalOpen(false)}
               >
                 Cancel
               </Button>
-              <Button type="submit">Submit Request</Button>
+              <Button type="submit" isLoading={isSubmittingRequest}>
+                {isSubmittingRequest ? "Submitting..." : "Submit Request"}
+              </Button>
             </div>
           </form>
         )}
@@ -613,8 +678,8 @@ function ProfessionalProfileContent({ params }: PageProps) {
               >
                 Cancel
               </Button>
-              <Button type="submit" variant="destructive" size="sm">
-                Submit Report
+              <Button type="submit" variant="destructive" size="sm" disabled={isSubmittingReport}>
+                {isSubmittingReport ? "Submitting..." : "Submit Report"}
               </Button>
             </div>
           </form>

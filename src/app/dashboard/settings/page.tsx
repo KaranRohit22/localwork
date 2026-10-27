@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { Avatar } from "@/components/ui/avatar";
 import { getCurrentUserProfileAction, updateCurrentUserProfileAction } from "@/app/actions/auth";
+import { updateUserPasswordAction } from "@/app/actions/services";
 
 export default function CustomerSettingsPage() {
   const [fullName, setFullName] = useState("");
@@ -65,7 +66,9 @@ export default function CustomerSettingsPage() {
     setTimeout(() => setProfileSaved(false), 3000);
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
 
@@ -75,6 +78,15 @@ export default function CustomerSettingsPage() {
     }
     if (newPassword.length < 8) {
       setPasswordError("Password must be at least 8 characters long.");
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    const res = await updateUserPasswordAction(newPassword);
+    setIsUpdatingPassword(false);
+
+    if (!res.success) {
+      setPasswordError(res.error || "Failed to update password.");
       return;
     }
 
@@ -225,7 +237,7 @@ export default function CustomerSettingsPage() {
           </div>
 
           <div className="pt-2">
-            <Button type="submit" variant="outline">
+            <Button type="submit" variant="outline" isLoading={isUpdatingPassword} disabled={isUpdatingPassword}>
               Update Password
             </Button>
           </div>

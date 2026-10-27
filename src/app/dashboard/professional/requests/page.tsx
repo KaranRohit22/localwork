@@ -1,31 +1,54 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   CheckCircle2,
   Calendar,
   MapPin,
   Check,
   X,
+  Inbox,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FormField } from "@/components/ui/form-field";
 import { Textarea } from "@/components/ui/textarea";
-import { mockRequests } from "@/lib/data/mock-data";
 import { ServiceRequestWithDetails } from "@/types";
+import {
+  getProfessionalIncomingRequestsAction,
+  updateServiceRequestStatusAction,
+} from "@/app/actions/services";
 
 export default function ProfessionalRequestsPage() {
-  const [requestsList, setRequestsList] = useState<ServiceRequestWithDetails[]>(mockRequests);
+  const [requestsList, setRequestsList] = useState<ServiceRequestWithDetails[]>([]);
   const [filterTab, setFilterTab] = useState<"all" | "pending" | "active" | "completed">("all");
   const [selectedRequest, setSelectedRequest] = useState<ServiceRequestWithDetails | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Status transition note modal
   const [noteModalOpen, setNoteModalOpen] = useState(false);
   const [statusAction, setStatusAction] = useState<"accepted" | "rejected" | "completed" | null>(null);
   const [statusNote, setStatusNote] = useState("");
+
+  useEffect(() => {
+    let isMounted = true;
+    getProfessionalIncomingRequestsAction().then((res) => {
+      if (isMounted) {
+        setRequestsList(res.requests || []);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshRequests = async () => {
+    const res = await getProfessionalIncomingRequestsAction();
+    setRequestsList(res.requests || []);
+  };
 
   const filteredRequests = requestsList.filter((r) => {
     if (filterTab === "pending") return r.status === "pending";
@@ -47,25 +70,35 @@ export default function ProfessionalRequestsPage() {
     setNoteModalOpen(true);
   };
 
-  const handleConfirmStatus = (e: React.FormEvent) => {
+  const handleStartWork = async (requestId: string) => {
+    setRequestsList((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, status: "in_progress" } : r))
+    );
+    await updateServiceRequestStatusAction({
+      requestId,
+      status: "in_progress",
+    });
+    refreshRequests();
+  };
+
+  const handleConfirmStatus = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedRequest || !statusAction) return;
 
-    setRequestsList((prev) =>
-      prev.map((r) =>
-        r.id === selectedRequest.id
-          ? {
-              ...r,
-              status: statusAction,
-              status_note: statusNote,
-            }
-          : r
-      )
-    );
-
-    setNoteModalOpen(false);
-    setSelectedRequest(null);
-    setStatusAction(null);
+    setIsSubmitting(true);
+    try {
+      await updateServiceRequestStatusAction({
+        requestId: selectedRequest.id,
+        status: statusAction,
+        statusNote: statusNote,
+      });
+      await refreshRequests();
+      setNoteModalOpen(false);
+      setSelectedRequest(null);
+      setStatusAction(null);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getStatusBadge = (status: string) => {
@@ -127,7 +160,14 @@ export default function ProfessionalRequestsPage() {
 
       {/* Requests List */}
       <div className="space-y-4">
-        {filteredRequests.map((req) => (
+        {filteredRequests.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="No inquiries found"
+            description="There are no service requests matching this filter."
+          />
+        ) : (
+          filteredRequests.map((req) => (
           <div
             key={req.id}
             className="bg-white rounded-2xl p-6 border border-border shadow-card hover:shadow-card-hover transition-all"
@@ -200,13 +240,7 @@ export default function ProfessionalRequestsPage() {
                     <Button
                       size="sm"
                       className="bg-primary text-white"
-                      onClick={() =>
-                        setRequestsList((prev) =>
-                          prev.map((r) =>
-                            r.id === req.id ? { ...r, status: "in_progress" } : r
-                          )
-                        )
-                      }
+                      onClick={() => handleStartWork(req.id)}
                     >
                       Start Work
                     </Button>
@@ -242,7 +276,8 @@ export default function ProfessionalRequestsPage() {
               </div>
             </div>
           </div>
-        ))}
+        ))
+      )}
       </div>
 
       {/* ============================================================
@@ -283,13 +318,14 @@ export default function ProfessionalRequestsPage() {
             <Button
               type="submit"
               size="sm"
+              disabled={isSubmitting}
               className={
                 statusAction === "rejected"
                   ? "bg-error text-white hover:bg-error/90"
                   : "bg-success text-white hover:bg-success/90"
               }
             >
-              Confirm
+              {isSubmitting ? "Updating..." : "Confirm"}
             </Button>
           </div>
         </form>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { FormField } from "@/components/ui/form-field";
 import { getCurrentUserProfileAction, updateCurrentUserProfileAction } from "@/app/actions/auth";
+import { updateUserPasswordAction } from "@/app/actions/services";
 
 export default function ProfessionalSettingsPage() {
   const [fullName, setFullName] = useState("");
@@ -20,10 +21,9 @@ export default function ProfessionalSettingsPage() {
           setFullName(res.profile.full_name || "");
           setEmail(res.profile.email || "");
           setPhone(res.profile.phone || "");
-        } else {
-          setFullName("Marcus Vance");
-          setEmail("marcus.vance@localwork.app");
-          setPhone("+1 (206) 555-0192");
+        } else if (res.user) {
+          setEmail(res.user.email || "");
+          setFullName(res.user.email?.split("@")[0] || "");
         }
       }
     });
@@ -32,6 +32,7 @@ export default function ProfessionalSettingsPage() {
     };
   }, []);
   const [profileSaved, setProfileSaved] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
 
   // Password state
   const [oldPassword, setOldPassword] = useState("");
@@ -39,18 +40,21 @@ export default function ProfessionalSettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [passwordSaved, setPasswordSaved] = useState(false);
   const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
 
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsUpdatingProfile(true);
     await updateCurrentUserProfileAction({
       full_name: fullName,
       phone: phone || null,
     });
+    setIsUpdatingProfile(false);
     setProfileSaved(true);
     setTimeout(() => setProfileSaved(false), 3000);
   };
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setPasswordError(null);
 
@@ -63,11 +67,20 @@ export default function ProfessionalSettingsPage() {
       return;
     }
 
+    setIsUpdatingPassword(true);
+    const res = await updateUserPasswordAction(newPassword);
+    setIsUpdatingPassword(false);
+
+    if (!res.success) {
+      setPasswordError(res.error || "Failed to update password.");
+      return;
+    }
+
     setPasswordSaved(true);
     setOldPassword("");
     setNewPassword("");
     setConfirmPassword("");
-    setTimeout(() => setPasswordSaved(false), 3000);
+    setTimeout(() => setPasswordSaved(false), 3500);
   };
 
   return (
@@ -126,7 +139,9 @@ export default function ProfessionalSettingsPage() {
           </FormField>
 
           <div className="pt-2">
-            <Button type="submit">Save Changes</Button>
+            <Button type="submit" disabled={isUpdatingProfile}>
+              {isUpdatingProfile ? "Saving..." : "Save Changes"}
+            </Button>
           </div>
         </form>
       </div>
@@ -186,8 +201,8 @@ export default function ProfessionalSettingsPage() {
           </div>
 
           <div className="pt-2">
-            <Button type="submit" variant="outline">
-              Update Password
+            <Button type="submit" variant="outline" disabled={isUpdatingPassword}>
+              {isUpdatingPassword ? "Updating..." : "Update Password"}
             </Button>
           </div>
         </form>

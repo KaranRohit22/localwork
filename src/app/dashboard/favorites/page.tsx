@@ -1,16 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Heart } from "lucide-react";
 import { ProfessionalCard } from "@/components/ui/professional-card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { mockProfessionals } from "@/lib/data/mock-data";
+import { getUserFavoriteIdsAction, toggleFavoriteAction } from "@/app/actions/services";
 
 export default function CustomerFavoritesPage() {
-  const [favoriteIds, setFavoriteIds] = useState<string[]>(["pro-1", "pro-2", "pro-3"]);
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
 
-  const handleToggleFavorite = (id: string) => {
+  useEffect(() => {
+    let isMounted = true;
+    getUserFavoriteIdsAction().then((ids) => {
+      if (isMounted) {
+        setFavoriteIds(ids);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const handleToggleFavorite = async (id: string) => {
+    // Optimistic update
     setFavoriteIds((prev) => prev.filter((favId) => favId !== id));
+    await toggleFavoriteAction(id);
   };
 
   const favoritePros = mockProfessionals.filter((p) => favoriteIds.includes(p.id));

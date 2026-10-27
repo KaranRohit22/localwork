@@ -5,30 +5,23 @@ import Link from "next/link";
 import { Star, MessageSquare } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
-import { mockReviews } from "@/lib/data/mock-data";
-import { getCurrentUserProfileAction } from "@/app/actions/auth";
+import { ReviewWithDetails } from "@/types";
+import { getCustomerReviewsAction } from "@/app/actions/services";
 
 export default function CustomerReviewsPage() {
-  const [userId, setUserId] = useState<string | null>(null);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [reviews, setReviews] = useState<ReviewWithDetails[]>([]);
 
   useEffect(() => {
     let isMounted = true;
-    getCurrentUserProfileAction().then((res) => {
-      if (isMounted && res.authenticated && res.user) {
-        setUserId(res.user.id);
-        setIsAuthenticated(true);
+    getCustomerReviewsAction().then((res) => {
+      if (isMounted) {
+        setReviews(res.reviews || []);
       }
     });
     return () => {
       isMounted = false;
     };
   }, []);
-
-  // Display user's reviews if authenticated, or demo reviews in preview mode
-  const myReviews = isAuthenticated
-    ? mockReviews.filter((r) => r.customer_id === userId)
-    : mockReviews.filter((r) => r.customer_id === "cust-1");
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -39,9 +32,9 @@ export default function CustomerReviewsPage() {
         </p>
       </div>
 
-      {myReviews.length > 0 ? (
+      {reviews.length > 0 ? (
         <div className="space-y-4">
-          {myReviews.map((rev) => (
+          {reviews.map((rev) => (
             <div
               key={rev.id}
               className="bg-white rounded-2xl p-6 border border-border shadow-card"
@@ -49,17 +42,17 @@ export default function CustomerReviewsPage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <Avatar
-                    src={rev.professional.avatar_url}
-                    alt={rev.professional.full_name}
+                    src={rev.professional?.avatar_url || undefined}
+                    alt={rev.professional?.full_name || "Professional"}
                     size="md"
                   />
                   <div>
                     <h3 className="text-base font-bold text-text">
                       <Link
-                        href="/professionals/pro-1"
+                        href={`/professionals/${rev.professional_id}`}
                         className="hover:text-primary transition-colors"
                       >
-                        {rev.professional.full_name}
+                        {rev.professional?.full_name || "Professional"}
                       </Link>
                     </h3>
                     <p className="text-xs text-text-muted">

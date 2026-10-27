@@ -42,7 +42,7 @@ export default function ProfessionalDashboardLayout({
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAvailable, setIsAvailable] = useState(true);
-  const [proProfile, setProProfile] = useState<{ full_name: string; avatar_url: string | null } | null>(null);
+  const [proProfile, setProProfile] = useState<{ id: string; full_name: string; avatar_url: string | null } | null>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -50,8 +50,15 @@ export default function ProfessionalDashboardLayout({
     getCurrentUserProfileAction().then((res) => {
       if (isMounted && res.authenticated && res.profile) {
         setProProfile({
+          id: res.profile.id,
           full_name: res.profile.full_name || "Professional",
           avatar_url: res.profile.avatar_url,
+        });
+      } else if (isMounted && res.user) {
+        setProProfile({
+          id: res.user.id,
+          full_name: res.user.email?.split("@")[0] || "Professional",
+          avatar_url: null,
         });
       }
     });
@@ -165,7 +172,7 @@ export default function ProfessionalDashboardLayout({
         {/* View Public Profile Link */}
         <div className="p-4 border-t border-border">
           <Link
-            href="/professionals/pro-1"
+            href={proProfile?.id ? `/professionals/${proProfile.id}` : "/professionals"}
             target="_blank"
             className="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-card-elevated text-text text-xs font-semibold hover:text-white hover:bg-card-elevated/80 border border-border transition-colors"
           >
@@ -205,7 +212,7 @@ export default function ProfessionalDashboardLayout({
               size="sm"
             />
             <div className="text-left">
-              <p className="text-sm font-semibold text-text leading-none">{proProfile?.full_name || "Marcus Vance"}</p>
+              <p className="text-sm font-semibold text-text leading-none">{proProfile?.full_name || "Professional"}</p>
               <p className="text-[11px] text-text-muted mt-0.5">Verified Professional</p>
             </div>
           </div>

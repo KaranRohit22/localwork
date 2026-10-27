@@ -1,23 +1,42 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Bell, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { mockNotifications } from "@/lib/data/mock-data";
+import { Notification } from "@/types";
+import {
+  getUserNotificationsAction,
+  markNotificationReadAction,
+  markAllNotificationsReadAction,
+} from "@/app/actions/services";
 
 export default function CustomerNotificationsPage() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  const markAllAsRead = () => {
+  useEffect(() => {
+    let isMounted = true;
+    getUserNotificationsAction().then((res) => {
+      if (isMounted) {
+        setNotifications(res.notifications);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const markAllAsRead = async () => {
     setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    await markAllNotificationsReadAction();
   };
 
-  const markSingleAsRead = (id: string) => {
+  const markSingleAsRead = async (id: string) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
     );
+    await markNotificationReadAction(id);
   };
 
   return (

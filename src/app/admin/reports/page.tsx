@@ -1,65 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FormField } from "@/components/ui/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { Report } from "@/types";
-
-const initialReports: Report[] = [
-  {
-    id: "rep-1",
-    reporter_id: "user-2",
-    target_type: "profile",
-    target_id: "user-6",
-    reason: "Suspicious spam account",
-    description: "User posted multiple solicitations with duplicate text in comments.",
-    status: "pending",
-    resolved_by: null,
-    resolution_note: null,
-    created_at: "2024-02-12T14:00:00Z",
-    updated_at: "2024-02-12T14:00:00Z",
-  },
-  {
-    id: "rep-2",
-    reporter_id: "user-1",
-    target_type: "review",
-    target_id: "rev-old",
-    reason: "Defamatory review from non-client",
-    description: "Competitor posted a 1-star review without ever booking any service.",
-    status: "resolved",
-    resolved_by: "super_admin",
-    resolution_note: "Review removed as it did not originate from a verified completed booking.",
-    created_at: "2024-01-28T09:30:00Z",
-    updated_at: "2024-01-29T10:00:00Z",
-  },
-];
+import { getAdminReportsAction, resolveAdminReportAction } from "@/app/actions/admin";
 
 export default function AdminReportsPage() {
-  const [reports, setReports] = useState<Report[]>(initialReports);
+  const [reports, setReports] = useState<Report[]>([]);
   const [activeReport, setActiveReport] = useState<Report | null>(null);
   const [resolutionNote, setResolutionNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleAction = (status: "resolved" | "dismissed") => {
+  useEffect(() => {
+    let isMounted = true;
+    getAdminReportsAction().then((reports) => {
+      if (isMounted) {
+        setReports(reports || []);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshReports = async () => {
+    const reports = await getAdminReportsAction();
+    setReports(reports || []);
+  };
+
+  const handleAction = async (status: "resolved" | "dismissed") => {
     if (!activeReport) return;
 
-    setReports((prev) =>
-      prev.map((r) =>
-        r.id === activeReport.id
-          ? {
-              ...r,
-              status,
-              resolved_by: "super_admin",
-              resolution_note: resolutionNote || (status === "resolved" ? "Action taken" : "Dismissed after investigation"),
-            }
-          : r
-      )
-    );
-
-    setActiveReport(null);
-    setResolutionNote("");
+    setIsSubmitting(true);
+    try {
+      const note = resolutionNote || (status === "resolved" ? "Action taken" : "Dismissed after investigation");
+      await resolveAdminReportAction({
+        reportId: activeReport.id,
+        status,
+        resolutionNote: note,
+      });
+      await refreshReports();
+      setActiveReport(null);
+      setResolutionNote("");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -72,7 +63,14 @@ export default function AdminReportsPage() {
       </div>
 
       <div className="space-y-4">
-        {reports.map((rep) => (
+        {reports.length === 0 ? (
+          <EmptyState
+            icon={ShieldCheck}
+            title="Moderation queue is clear"
+            description="No active flags, complaints, or safety reports submitted by community members."
+          />
+        ) : (
+          reports.map((rep) => (
           <div
             key={rep.id}
             className="bg-white rounded-2xl p-6 border border-border shadow-card flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
@@ -128,7 +126,8 @@ export default function AdminReportsPage() {
               )}
             </div>
           </div>
-        ))}
+        ))
+      )}
       </div>
 
       {/* Moderation Action Modal */}
@@ -160,16 +159,18 @@ export default function AdminReportsPage() {
               <Button
                 variant="outline"
                 size="sm"
+                disabled={isSubmitting}
                 onClick={() => handleAction("dismissed")}
               >
                 Dismiss Report
               </Button>
               <Button
                 size="sm"
+                disabled={isSubmitting}
                 className="bg-success text-white hover:bg-success/90"
                 onClick={() => handleAction("resolved")}
               >
-                Resolve & Sanction
+                {isSubmitting ? "Processing..." : "Resolve & Sanction"}
               </Button>
             </div>
           </div>

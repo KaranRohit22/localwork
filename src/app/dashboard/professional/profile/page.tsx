@@ -1,34 +1,49 @@
 "use client";
 
-import { useState } from "react";
-import { UserCheck, Plus, X, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { UserCheck, Plus, X, CheckCircle2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
+import {
+  getProfessionalProfileDataAction,
+  updateProfessionalProfileDataAction,
+} from "@/app/actions/services";
 
 export default function ProfessionalProfileEditorPage() {
-  const [headline, setHeadline] = useState("Master Electrician & Smart Home Specialist");
-  const [bio, setBio] = useState(
-    "Licensed master electrician with over 12 years of hands-on experience in residential and commercial wiring, panel upgrades, EV charger installations, and smart home automation. Dedicated to clean work and strict safety standards."
-  );
-  const [yearsExperience, setYearsExperience] = useState("12");
-  const [hourlyRate, setHourlyRate] = useState("85");
-  const [city, setCity] = useState("Seattle");
-  const [serviceArea, setServiceArea] = useState("Greater Seattle, Bellevue, Redmond, Kirkland");
+  const [headline, setHeadline] = useState("");
+  const [bio, setBio] = useState("");
+  const [yearsExperience, setYearsExperience] = useState("1");
+  const [hourlyRate, setHourlyRate] = useState("75");
+  const [city, setCity] = useState("");
+  const [serviceArea, setServiceArea] = useState("");
   const [isAvailable, setIsAvailable] = useState(true);
-
-  // Skills chip management
-  const [skills, setSkills] = useState([
-    "Panel Upgrades",
-    "EV Chargers",
-    "Smart Lighting",
-    "Rewiring",
-    "Code Compliance",
-    "Generators",
-  ]);
+  const [skills, setSkills] = useState<string[]>([]);
   const [newSkill, setNewSkill] = useState("");
+
+  const [isSaving, setIsSaving] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getProfessionalProfileDataAction().then((res) => {
+      if (isMounted && res.profile) {
+        setHeadline(res.profile.headline || "");
+        setBio(res.profile.bio || "");
+        setYearsExperience(String(res.profile.years_experience || 1));
+        setHourlyRate(res.profile.hourly_rate ? String(res.profile.hourly_rate) : "75");
+        setCity(res.profile.city || "");
+        setServiceArea(res.profile.service_area || "");
+        setIsAvailable(res.profile.is_available !== false);
+        setSkills(res.profile.skills || []);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const handleAddSkill = (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,10 +57,29 @@ export default function ProfessionalProfileEditorPage() {
     setSkills(skills.filter((s) => s !== skillToRemove));
   };
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavedSuccess(true);
-    setTimeout(() => setSavedSuccess(false), 3000);
+    setIsSaving(true);
+    setErrorMessage(null);
+
+    const res = await updateProfessionalProfileDataAction({
+      headline,
+      bio,
+      years_experience: Number(yearsExperience) || 1,
+      hourly_rate: hourlyRate ? Number(hourlyRate) : null,
+      city: city || "Local",
+      service_area: serviceArea || city || "Local Area",
+      skills,
+      is_available: isAvailable,
+    });
+
+    setIsSaving(false);
+    if (!res.success) {
+      setErrorMessage(res.error || "Failed to update professional profile.");
+    } else {
+      setSavedSuccess(true);
+      setTimeout(() => setSavedSuccess(false), 3500);
+    }
   };
 
   return (
@@ -61,6 +95,13 @@ export default function ProfessionalProfileEditorPage() {
         <div className="flex items-center gap-2 p-4 rounded-xl bg-success-light text-success text-sm font-semibold">
           <CheckCircle2 className="h-5 w-5" />
           Business profile changes saved successfully!
+        </div>
+      )}
+
+      {errorMessage && (
+        <div className="flex items-center gap-2 p-4 rounded-xl bg-error-light text-error text-sm font-semibold">
+          <AlertCircle className="h-5 w-5" />
+          {errorMessage}
         </div>
       )}
 
@@ -204,8 +245,8 @@ export default function ProfessionalProfileEditorPage() {
         </div>
 
         <div className="flex justify-end pt-2">
-          <Button type="submit" size="lg" className="font-semibold shadow-md">
-            Save All Changes
+          <Button type="submit" size="lg" disabled={isSaving} className="font-semibold shadow-md">
+            {isSaving ? "Saving..." : "Save All Changes"}
           </Button>
         </div>
       </form>

@@ -17,88 +17,44 @@ import { FormField } from "@/components/ui/form-field";
 import { Textarea } from "@/components/ui/textarea";
 import { EmptyState } from "@/components/ui/empty-state";
 import { InteractiveStarRating } from "@/components/ui/star-rating";
-import { mockRequests } from "@/lib/data/mock-data";
 import { ServiceRequestWithDetails } from "@/types";
-import { getCurrentUserProfileAction, getCurrentUserRequestsAction } from "@/app/actions/auth";
+import {
+  getCustomerDetailedRequestsAction,
+  updateServiceRequestStatusAction,
+  submitReviewAction,
+} from "@/app/actions/services";
+import { getCurrentUserProfileAction } from "@/app/actions/auth";
 
 export default function CustomerRequestsPage() {
-  const [requestsList, setRequestsList] = useState<ServiceRequestWithDetails[]>(mockRequests);
+  const [requestsList, setRequestsList] = useState<ServiceRequestWithDetails[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [filterTab, setFilterTab] = useState<"all" | "active" | "completed">("all");
+
+  const loadRequests = async () => {
+    const authRes = await getCurrentUserProfileAction();
+    if (authRes.authenticated) {
+      const res = await getCustomerDetailedRequestsAction();
+      setRequestsList(res.requests || []);
+    } else {
+      setRequestsList([]);
+    }
+    setIsLoading(false);
+  };
 
   useEffect(() => {
     let isMounted = true;
-    getCurrentUserProfileAction().then((res) => {
-      if (isMounted) {
-        if (res.authenticated && res.user) {
-          getCurrentUserRequestsAction().then((reqRes) => {
-            if (isMounted) {
-              if (reqRes.authenticated && reqRes.requests.length > 0) {
-                const mapped: ServiceRequestWithDetails[] = reqRes.requests.map((r) => ({
-                  id: r.id,
-                  customer_id: res.user!.id,
-                  professional_id: "pro-1",
-                  category_id: null,
-                  title: r.title,
-                  description: r.description,
-                  location: r.city || "Local",
-                  preferred_date: r.preferred_date,
-                  budget: r.budget,
-                  status: (r.status as ServiceRequestWithDetails["status"]) || "pending",
-                  status_note: null,
-                  created_at: r.created_at,
-                  updated_at: r.created_at,
-                  customer: res.profile || {
-                    id: res.user!.id,
-                    email: res.user!.email || "",
-                    full_name: "Customer",
-                    avatar_url: null,
-                    phone: null,
-                    role: "customer",
-                    is_active: true,
-                    created_at: "",
-                    updated_at: "",
-                  },
-                  professional: {
-                    id: "pro-1",
-                    email: "pro@example.com",
-                    full_name: "Local Service Pro",
-                    avatar_url: null,
-                    phone: null,
-                    role: "professional",
-                    is_active: true,
-                    created_at: "",
-                    updated_at: "",
-                  },
-                  professional_profile: {
-                    id: "prof-1",
-                    user_id: "pro-1",
-                    headline: "Verified Professional",
-                    bio: null,
-                    hourly_rate: 65,
-                    years_experience: 5,
-                    city: r.city || "Local Area",
-                    service_area: "Metropolitan Area",
-                    is_available: true,
-                    verification_status: "approved",
-                    verified_at: null,
-                    verified_by: null,
-                    rejection_reason: null,
-                    skills: [],
-                    created_at: "",
-                    updated_at: "",
-                  },
-                  category: null,
-                  review: null,
-                }));
-                setRequestsList(mapped);
-              } else {
-                setRequestsList([]);
-              }
-            }
-          });
-        }
+    async function init() {
+      const authRes = await getCurrentUserProfileAction();
+      if (!isMounted) return;
+      if (authRes.authenticated) {
+        const res = await getCustomerDetailedRequestsAction();
+        if (isMounted) setRequestsList(res.requests || []);
+      } else {
+        if (isMounted) setRequestsList([]);
       }
-    });
+      if (isMounted) setIsLoading(false);
+    }
+    init();
     return () => {
       isMounted = false;
     };
@@ -112,6 +68,8 @@ export default function CustomerRequestsPage() {
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSuccess, setReviewSuccess] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [reviewError, setReviewError] = useState<string | null>(null);
 
   // Filter requests
   const filteredRequests = requestsList.filter((r) => {
@@ -124,46 +82,49 @@ export default function CustomerRequestsPage() {
     return true;
   });
 
-  const handleCancelRequest = (id: string) => {
+  const handleCancelRequest = async (id: string) => {
+    // Optimistic update
     setRequestsList((prev) =>
       prev.map((r) =>
         r.id === id ? { ...r, status: "cancelled", status_note: "Cancelled by customer." } : r
       )
     );
     if (selectedRequest && selectedRequest.id === id) {
-      setSelectedRequest((prev) =>
+      setSelectedRequest((prev: ServiceRequestWithDetails | null) =>
         prev ? { ...prev, status: "cancelled", status_note: "Cancelled by customer." } : null
       );
     }
+
+    await updateServiceRequestStatusAction({
+      requestId: id,
+      status: "cancelled",
+      statusNote: "Cancelled by customer.",
+    });
   };
 
-  const handleReviewSubmit = (e: React.FormEvent) => {
+  const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!reviewRequest) return;
+    setReviewError(null);
+    setIsSubmittingReview(true);
 
-    // Attach review to request
-    setRequestsList((prev) =>
-      prev.map((r) =>
-        r.id === reviewRequest.id
-          ? {
-              ...r,
-              review: {
-                id: `rev-${Date.now()}`,
-                request_id: r.id,
-                customer_id: r.customer_id,
-                professional_id: r.professional_id,
-                rating: reviewRating,
-                comment: reviewComment,
-                is_visible: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              },
-            }
-          : r
-      )
-    );
+    const res = await submitReviewAction({
+      requestId: reviewRequest.id,
+      rating: reviewRating,
+      comment: reviewComment,
+    });
+
+    setIsSubmittingReview(false);
+
+    if (!res.success) {
+      setReviewError(res.error || "Failed to submit review.");
+      return;
+    }
 
     setReviewSuccess(true);
+    // Reload requests to show updated review state
+    loadRequests();
+
     setTimeout(() => {
       setReviewSuccess(false);
       setReviewRequest(null);
@@ -235,7 +196,9 @@ export default function CustomerRequestsPage() {
 
       {/* Requests List */}
       <div className="space-y-4">
-        {filteredRequests.length === 0 ? (
+        {isLoading ? (
+          <div className="p-12 text-center text-sm text-text-muted">Loading your service requests...</div>
+        ) : filteredRequests.length === 0 ? (
           <EmptyState
             icon={Inbox}
             title="No service requests found"
@@ -430,6 +393,12 @@ export default function CustomerRequestsPage() {
           </div>
         ) : (
           <form onSubmit={handleReviewSubmit} className="space-y-4">
+            {reviewError && (
+              <div className="p-3 rounded-xl bg-error-light text-error text-xs font-semibold">
+                {reviewError}
+              </div>
+            )}
+
             <FormField label="Your Rating" required>
               <div className="py-2">
                 <InteractiveStarRating
@@ -454,12 +423,13 @@ export default function CustomerRequestsPage() {
                 type="button"
                 variant="outline"
                 size="sm"
+                disabled={isSubmittingReview}
                 onClick={() => setReviewRequest(null)}
               >
                 Cancel
               </Button>
-              <Button type="submit" size="sm">
-                Publish Verified Review
+              <Button type="submit" size="sm" isLoading={isSubmittingReview}>
+                {isSubmittingReview ? "Publishing..." : "Publish Verified Review"}
               </Button>
             </div>
           </form>

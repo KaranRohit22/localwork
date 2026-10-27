@@ -1,96 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Modal } from "@/components/ui/modal";
 import { Profile, UserRole } from "@/types";
-
-const initialUsers: Profile[] = [
-  {
-    id: "user-1",
-    email: "marcus.vance@localwork.app",
-    full_name: "Marcus Vance",
-    avatar_url: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80",
-    phone: "+1 (206) 555-0192",
-    role: "professional",
-    is_active: true,
-    created_at: "2024-01-10T08:00:00Z",
-    updated_at: "2024-02-01T12:00:00Z",
-  },
-  {
-    id: "user-2",
-    email: "sarah.miller@gmail.com",
-    full_name: "Sarah Miller",
-    avatar_url: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&q=80",
-    phone: "+1 (206) 555-9011",
-    role: "customer",
-    is_active: true,
-    created_at: "2024-01-05T00:00:00Z",
-    updated_at: "2024-01-05T00:00:00Z",
-  },
-  {
-    id: "user-3",
-    email: "elena.rodriguez@localwork.app",
-    full_name: "Elena Rodriguez",
-    avatar_url: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&w=400&q=80",
-    phone: "+1 (206) 555-0144",
-    role: "professional",
-    is_active: true,
-    created_at: "2024-01-08T09:00:00Z",
-    updated_at: "2024-02-02T11:00:00Z",
-  },
-  {
-    id: "user-4",
-    email: "admin@localwork.app",
-    full_name: "System Security Admin",
-    avatar_url: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=200&q=80",
-    phone: "+1 (206) 555-0100",
-    role: "admin",
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-  },
-  {
-    id: "user-5",
-    email: "kevin.w@outlook.com",
-    full_name: "Kevin Wong",
-    avatar_url: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&q=80",
-    phone: null,
-    role: "customer",
-    is_active: true,
-    created_at: "2024-01-07T00:00:00Z",
-    updated_at: "2024-01-07T00:00:00Z",
-  },
-  {
-    id: "user-6",
-    email: "suspicious.user@tempmail.com",
-    full_name: "John Spammer",
-    avatar_url: null,
-    phone: "+1 (555) 000-0000",
-    role: "customer",
-    is_active: false,
-    created_at: "2024-02-05T00:00:00Z",
-    updated_at: "2024-02-06T00:00:00Z",
-  },
-];
+import { getAdminUsersAction, toggleAdminUserStatusAction } from "@/app/actions/admin";
 
 export default function AdminUsersPage() {
-  const [users, setUsers] = useState<Profile[]>(initialUsers);
+  const [users, setUsers] = useState<Profile[]>([]);
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | UserRole>("all");
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "suspended">("all");
   const [inspectUser, setInspectUser] = useState<Profile | null>(null);
 
-  const toggleUserStatus = (id: string) => {
+  useEffect(() => {
+    let isMounted = true;
+    getAdminUsersAction().then((users) => {
+      if (isMounted) {
+        setUsers(users || []);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshUsers = async () => {
+    const users = await getAdminUsersAction();
+    setUsers(users || []);
+  };
+
+  const toggleUserStatus = async (id: string, currentActive: boolean) => {
     setUsers((prev) =>
-      prev.map((u) => (u.id === id ? { ...u, is_active: !u.is_active } : u))
+      prev.map((u) => (u.id === id ? { ...u, is_active: !currentActive } : u))
     );
     if (inspectUser && inspectUser.id === id) {
-      setInspectUser((prev) => (prev ? { ...prev, is_active: !prev.is_active } : null));
+      setInspectUser((prev) => (prev ? { ...prev, is_active: !currentActive } : null));
     }
+    await toggleAdminUserStatusAction(id);
+    refreshUsers();
   };
 
   const filteredUsers = users.filter((u) => {
@@ -231,7 +182,7 @@ export default function AdminUsersPage() {
                               ? "text-error border-error/20 hover:bg-error-light/50"
                               : "text-success border-success/20 hover:bg-success-light"
                           }
-                          onClick={() => toggleUserStatus(user.id)}
+                          onClick={() => toggleUserStatus(user.id, user.is_active)}
                         >
                           {user.is_active ? "Suspend" : "Activate"}
                         </Button>
@@ -287,7 +238,7 @@ export default function AdminUsersPage() {
                   variant="outline"
                   size="sm"
                   className={inspectUser.is_active ? "text-error" : "text-success"}
-                  onClick={() => toggleUserStatus(inspectUser.id)}
+                  onClick={() => toggleUserStatus(inspectUser.id, inspectUser.is_active)}
                 >
                   {inspectUser.is_active ? "Suspend Account" : "Re-activate Account"}
                 </Button>

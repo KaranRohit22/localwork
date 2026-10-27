@@ -30,9 +30,9 @@ import { Modal } from "@/components/ui/modal";
 import { FormField } from "@/components/ui/form-field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { mockRequests, mockReviews, mockProfessionals } from "@/lib/data/mock-data";
-import { ServiceRequestWithDetails } from "@/types";
+import { ServiceRequestWithDetails, ReviewWithDetails } from "@/types";
 import { getCurrentUserProfileAction, updateCurrentUserProfileAction } from "@/app/actions/auth";
+import { getCustomerDetailedRequestsAction, getCustomerReviewsAction } from "@/app/actions/services";
 
 export default function SelfProfileActivityPage() {
   // Mode toggle: Customer view vs Professional view
@@ -43,7 +43,6 @@ export default function SelfProfileActivityPage() {
   const [workFilter, setWorkFilter] = useState<"all" | "completed" | "in_progress" | "pending">("all");
 
   // Profile data state
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -53,6 +52,10 @@ export default function SelfProfileActivityPage() {
   );
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
+  // Real user data state
+  const [customerRequests, setCustomerRequests] = useState<ServiceRequestWithDetails[]>([]);
+  const [myReviews, setMyReviews] = useState<ReviewWithDetails[]>([]);
+
   // Edit Modal State
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [tempName, setTempName] = useState("");
@@ -61,31 +64,37 @@ export default function SelfProfileActivityPage() {
   const [tempBio, setTempBio] = useState(bio);
   const [saveSuccess, setSaveSuccess] = useState(false);
 
-  // Load authenticated user profile on mount
+  // Load authenticated user profile and real data on mount
   useEffect(() => {
     let isMounted = true;
-    getCurrentUserProfileAction().then((res) => {
-      if (isMounted) {
-        if (res.profile) {
-          setCurrentUserId(res.profile.id);
-          setFullName(res.profile.full_name || "Customer");
-          setEmail(res.profile.email || "");
-          setPhone(res.profile.phone || "");
-          setAvatarUrl(res.profile.avatar_url || null);
-          setTempName(res.profile.full_name || "Customer");
-          setTempPhone(res.profile.phone || "");
-          if (res.profile.role === "professional") {
-            setProfileRole("professional");
-          }
-        } else if (res.user) {
-          setCurrentUserId(res.user.id);
-          setEmail(res.user.email || "");
-          const fallback = res.user.email?.split("@")[0] || "Customer";
-          setFullName(fallback);
-          setTempName(fallback);
+    Promise.all([
+      getCurrentUserProfileAction(),
+      getCustomerDetailedRequestsAction(),
+      getCustomerReviewsAction(),
+    ]).then(([profileRes, requestsRes, reviewsRes]) => {
+      if (!isMounted) return;
+
+      if (profileRes.profile) {
+        setFullName(profileRes.profile.full_name || "Customer");
+        setEmail(profileRes.profile.email || "");
+        setPhone(profileRes.profile.phone || "");
+        setAvatarUrl(profileRes.profile.avatar_url || null);
+        setTempName(profileRes.profile.full_name || "Customer");
+        setTempPhone(profileRes.profile.phone || "");
+        if (profileRes.profile.role === "professional") {
+          setProfileRole("professional");
         }
+      } else if (profileRes.user) {
+        setEmail(profileRes.user.email || "");
+        const fallback = profileRes.user.email?.split("@")[0] || "Customer";
+        setFullName(fallback);
+        setTempName(fallback);
       }
+
+      setCustomerRequests(requestsRes.requests || []);
+      setMyReviews(reviewsRes.reviews || []);
     });
+
     return () => {
       isMounted = false;
     };
@@ -94,10 +103,6 @@ export default function SelfProfileActivityPage() {
   // Selected work item for detail modal
   const [selectedWork, setSelectedWork] = useState<ServiceRequestWithDetails | null>(null);
 
-  // Filter requests
-  const customerRequests = currentUserId
-    ? mockRequests.filter((r) => r.customer_id === currentUserId)
-    : mockRequests;
   const filteredWork = customerRequests.filter((r) => {
     if (workFilter === "completed") return r.status === "completed";
     if (workFilter === "in_progress") return r.status === "in_progress" || r.status === "accepted";
@@ -109,9 +114,16 @@ export default function SelfProfileActivityPage() {
   const completedCount = customerRequests.filter((r) => r.status === "completed").length;
   const activeCount = customerRequests.filter((r) => r.status === "pending" || r.status === "in_progress" || r.status === "accepted").length;
   const totalSpent = customerRequests.reduce((sum, r) => sum + (r.budget || 0), 0);
-  const myReviews = currentUserId
-    ? mockReviews.filter((r) => r.customer_id === currentUserId)
-    : [];
+  const avgRating = myReviews.length > 0 ? (myReviews.reduce((sum, r) => sum + r.rating, 0) / myReviews.length).toFixed(1) : "5.0";
+  
+  // Unique hired pros derived from real service requests
+  const hiredPros = Array.from(
+    new Map(
+      customerRequests
+        .filter((r) => r.professional && r.professional.id)
+        .map((r) => [r.professional.id, r.professional])
+    ).values()
+  );
 
   // Handle Edit Submit
   const handleSaveProfile = async (e: React.FormEvent) => {
@@ -349,7 +361,7 @@ export default function SelfProfileActivityPage() {
               </div>
               <p className="text-2xl font-black text-text">{myReviews.length}</p>
               <p className="text-xs text-amber font-semibold mt-1 flex items-center gap-1">
-                5.0 ★ average rating
+                {myReviews.length > 0 ? `${avgRating} ★ average rating` : "No reviews yet"}
               </p>
             </Card>
 
@@ -362,7 +374,7 @@ export default function SelfProfileActivityPage() {
                   <Heart className="h-4 w-4" />
                 </div>
               </div>
-              <p className="text-2xl font-black text-text">3 Experts</p>
+              <p className="text-2xl font-black text-text">{hiredPros.length} {hiredPros.length === 1 ? "Expert" : "Experts"}</p>
               <p className="text-xs text-text-muted mt-1">Direct local network</p>
             </Card>
           </>
@@ -690,52 +702,58 @@ export default function SelfProfileActivityPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mockProfessionals.slice(0, 3).map((pro) => (
-              <Card
-                key={pro.id}
-                className="p-6 border-border flex flex-col justify-between hover:border-border-hover transition-all"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar src={pro.profile.avatar_url || undefined} alt={pro.profile.full_name} size="lg" />
-                    <div>
-                      <h4 className="text-base font-bold text-text">{pro.profile.full_name}</h4>
-                      <p className="text-xs text-primary font-semibold">{pro.headline || pro.categories[0]?.name || "Local Craftsman"}</p>
-                      <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
-                        <MapPin className="h-3 w-3" />
-                        {pro.city || "Seattle, WA"}
-                      </p>
+          {hiredPros.length === 0 ? (
+            <Card className="p-10 text-center border-border">
+              <Heart className="h-10 w-10 text-text-muted mx-auto mb-3" />
+              <h3 className="text-base font-bold text-text">No hired professionals yet</h3>
+              <p className="text-xs text-text-muted mt-1 max-w-sm mx-auto">
+                When you hire professionals for your home projects, they will be saved here in your direct network for quick re-hiring.
+              </p>
+              <div className="pt-4">
+                <Link href="/professionals">
+                  <Button size="sm" className="font-semibold">
+                    Explore Local Professionals
+                  </Button>
+                </Link>
+              </div>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {hiredPros.map((pro) => (
+                <Card
+                  key={pro.id}
+                  className="p-6 border-border flex flex-col justify-between hover:border-border-hover transition-all"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-3">
+                      <Avatar src={pro.avatar_url || undefined} alt={pro.full_name} size="lg" />
+                      <div>
+                        <h4 className="text-base font-bold text-text">{pro.full_name}</h4>
+                        <p className="text-xs text-primary font-semibold">Verified Craftsman</p>
+                        <p className="text-xs text-text-muted flex items-center gap-1 mt-0.5">
+                          <Mail className="h-3 w-3" />
+                          {pro.email}
+                        </p>
+                      </div>
                     </div>
                   </div>
 
-                  <p className="text-xs text-text-secondary line-clamp-2 leading-relaxed">
-                    {pro.bio}
-                  </p>
-
-                  <div className="flex items-center justify-between text-xs pt-2 border-t border-border">
-                    <span className="text-amber font-semibold flex items-center gap-1">
-                      ★ {(pro.average_rating || 5.0).toFixed(1)} ({pro.review_count} reviews)
-                    </span>
-                    <span className="font-bold text-text">${pro.hourly_rate} / hr</span>
+                  <div className="pt-4 flex items-center gap-2">
+                    <Link href={`/professionals/${pro.id}`} className="flex-1">
+                      <Button variant="outline" size="sm" className="w-full font-semibold">
+                        Profile
+                      </Button>
+                    </Link>
+                    <Link href={`/professionals/${pro.id}`} className="flex-1">
+                      <Button size="sm" className="w-full font-semibold">
+                        Rehire
+                      </Button>
+                    </Link>
                   </div>
-                </div>
-
-                <div className="pt-4 flex items-center gap-2">
-                  <Link href={`/professionals/${pro.id}`} className="flex-1">
-                    <Button variant="outline" size="sm" className="w-full font-semibold">
-                      Profile
-                    </Button>
-                  </Link>
-                  <Link href={`/professionals/${pro.id}`} className="flex-1">
-                    <Button size="sm" className="w-full font-semibold">
-                      Rehire
-                    </Button>
-                  </Link>
-                </div>
-              </Card>
-            ))}
-          </div>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 

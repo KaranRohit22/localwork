@@ -18,19 +18,42 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
-import { mockRequests } from "@/lib/data/mock-data";
+import { EmptyState } from "@/components/ui/empty-state";
 import { ServiceRequestWithDetails, RequestStatus } from "@/types";
 import { getCurrentUserProfileAction } from "@/app/actions/auth";
+import {
+  getProfessionalIncomingRequestsAction,
+  updateServiceRequestStatusAction,
+  getProfessionalReviewsAction,
+  getProfessionalProfileDataAction,
+} from "@/app/actions/services";
 
 export default function ProfessionalDashboardPage() {
-  const [incomingRequests, setIncomingRequests] = useState<ServiceRequestWithDetails[]>(mockRequests);
+  const [incomingRequests, setIncomingRequests] = useState<ServiceRequestWithDetails[]>([]);
   const [proName, setProName] = useState<string | null>(null);
+  const [proRating, setProRating] = useState<number>(5.0);
+  const [proReviewCount, setProReviewCount] = useState<number>(0);
+  const [hourlyRate, setHourlyRate] = useState<number>(75);
 
   useEffect(() => {
     let isMounted = true;
-    getCurrentUserProfileAction().then((res) => {
-      if (isMounted && res.authenticated && res.profile?.full_name) {
-        setProName(res.profile.full_name);
+    Promise.all([
+      getCurrentUserProfileAction(),
+      getProfessionalIncomingRequestsAction(),
+      getProfessionalReviewsAction(),
+      getProfessionalProfileDataAction(),
+    ]).then(([userRes, requestsRes, reviewsRes, profileRes]) => {
+      if (!isMounted) return;
+      if (userRes.authenticated && userRes.profile?.full_name) {
+        setProName(userRes.profile.full_name);
+      }
+      setIncomingRequests(requestsRes.requests || []);
+      if (reviewsRes.reviewCount > 0) {
+        setProRating(reviewsRes.averageRating);
+        setProReviewCount(reviewsRes.reviewCount);
+      }
+      if (profileRes.profile?.hourly_rate) {
+        setHourlyRate(profileRes.profile.hourly_rate);
       }
     });
     return () => {
@@ -38,10 +61,19 @@ export default function ProfessionalDashboardPage() {
     };
   }, []);
 
-  const handleStatusChange = (id: string, newStatus: RequestStatus) => {
+  const handleStatusChange = async (id: string, newStatus: RequestStatus) => {
     setIncomingRequests((prev) =>
       prev.map((r) => (r.id === id ? { ...r, status: newStatus } : r))
     );
+    await updateServiceRequestStatusAction({
+      requestId: id,
+      status: newStatus,
+    });
+    // Refresh to get server confirmed state
+    const res = await getProfessionalIncomingRequestsAction();
+    if (res.requests) {
+      setIncomingRequests(res.requests);
+    }
   };
 
   const pendingRequests = incomingRequests.filter((r) => r.status === "pending");
@@ -111,8 +143,12 @@ export default function ProfessionalDashboardPage() {
               <Star className="h-4 w-4 fill-amber" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-navy mt-3">4.95</p>
-          <p className="text-xs text-text-muted mt-1">From 48 verified clients</p>
+          <p className="text-3xl font-extrabold text-navy mt-3">
+            {proReviewCount > 0 ? proRating.toFixed(1) : "5.0"}
+          </p>
+          <p className="text-xs text-text-muted mt-1">
+            {proReviewCount > 0 ? `From ${proReviewCount} verified clients` : "No reviews yet"}
+          </p>
         </Card>
 
         <Card className="p-5 border-border">
@@ -122,7 +158,7 @@ export default function ProfessionalDashboardPage() {
               <DollarSign className="h-4 w-4" />
             </div>
           </div>
-          <p className="text-3xl font-extrabold text-navy mt-3">$85<span className="text-sm font-normal text-text-muted">/hr</span></p>
+          <p className="text-3xl font-extrabold text-navy mt-3">${hourlyRate}<span className="text-sm font-normal text-text-muted">/hr</span></p>
           <p className="text-xs text-text-muted mt-1">Public listing price</p>
         </Card>
       </div>
@@ -145,107 +181,115 @@ export default function ProfessionalDashboardPage() {
           </Link>
         </div>
 
-        <div className="space-y-4">
-          {incomingRequests.map((req) => (
-            <div
-              key={req.id}
-              className="p-5 rounded-xl border border-border bg-input-bg/30 hover:bg-input-bg/60 transition-colors flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
-            >
-              <div className="flex items-start gap-4">
-                <Avatar
-                  src={req.customer.avatar_url}
-                  alt={req.customer.full_name}
-                  size="md"
-                />
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-semibold text-text text-base">{req.title}</h3>
-                    {req.status === "pending" && <Badge variant="warning">New Request</Badge>}
-                    {req.status === "accepted" && <Badge variant="default">Accepted</Badge>}
-                    {req.status === "in_progress" && <Badge variant="secondary">In Progress</Badge>}
-                    {req.status === "completed" && <Badge variant="success">Completed</Badge>}
-                    {req.status === "rejected" && <Badge variant="destructive">Declined</Badge>}
-                  </div>
-                  <p className="text-xs text-text-secondary">
-                    Client: <strong className="text-text">{req.customer.full_name}</strong> • Phone:{" "}
-                    <span className="text-text-muted">{req.customer.phone || "+1 (206) 555-9011"}</span>
-                  </p>
-                  <p className="text-xs text-text-secondary line-clamp-2 max-w-xl">
-                    {req.description}
-                  </p>
-                  <div className="flex items-center gap-4 text-xs text-text-muted pt-1 flex-wrap">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {req.location}
-                    </span>
-                    <span>•</span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {req.preferred_date ? new Date(req.preferred_date).toLocaleDateString() : "Flexible"}
-                    </span>
-                    {req.budget && (
-                      <>
-                        <span>•</span>
-                        <span className="font-semibold text-text">Customer Budget: ${req.budget}</span>
-                      </>
-                    )}
+        {incomingRequests.length === 0 ? (
+          <EmptyState
+            icon={Inbox}
+            title="No job inquiries yet"
+            description="When customers submit requests for your services, they will appear here for you to review, accept, or decline."
+          />
+        ) : (
+          <div className="space-y-4">
+            {incomingRequests.map((req) => (
+              <div
+                key={req.id}
+                className="p-5 rounded-xl border border-border bg-input-bg/30 hover:bg-input-bg/60 transition-colors flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6"
+              >
+                <div className="flex items-start gap-4">
+                  <Avatar
+                    src={req.customer.avatar_url}
+                    alt={req.customer.full_name}
+                    size="md"
+                  />
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-semibold text-text text-base">{req.title}</h3>
+                      {req.status === "pending" && <Badge variant="warning">New Request</Badge>}
+                      {req.status === "accepted" && <Badge variant="default">Accepted</Badge>}
+                      {req.status === "in_progress" && <Badge variant="secondary">In Progress</Badge>}
+                      {req.status === "completed" && <Badge variant="success">Completed</Badge>}
+                      {req.status === "rejected" && <Badge variant="destructive">Declined</Badge>}
+                    </div>
+                    <p className="text-xs text-text-secondary">
+                      Client: <strong className="text-text">{req.customer.full_name}</strong> • Phone:{" "}
+                      <span className="text-text-muted">{req.customer.phone || "+1 (206) 555-9011"}</span>
+                    </p>
+                    <p className="text-xs text-text-secondary line-clamp-2 max-w-xl">
+                      {req.description}
+                    </p>
+                    <div className="flex items-center gap-4 text-xs text-text-muted pt-1 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3.5 w-3.5" />
+                        {req.location}
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-3.5 w-3.5" />
+                        {req.preferred_date ? new Date(req.preferred_date).toLocaleDateString() : "Flexible"}
+                      </span>
+                      {req.budget && (
+                        <>
+                          <span>•</span>
+                          <span className="font-semibold text-text">Customer Budget: ${req.budget}</span>
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons for Pros */}
-              <div className="flex items-center gap-2 self-end lg:self-center shrink-0">
-                {req.status === "pending" && (
-                  <>
+                {/* Action Buttons for Pros */}
+                <div className="flex items-center gap-2 self-end lg:self-center shrink-0">
+                  {req.status === "pending" && (
+                    <>
+                      <Button
+                        size="sm"
+                        className="bg-success text-white hover:bg-success/90"
+                        onClick={() => handleStatusChange(req.id, "accepted")}
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Accept Job
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="text-error border-error/20 hover:bg-error-light/40"
+                        onClick={() => handleStatusChange(req.id, "rejected")}
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Decline
+                      </Button>
+                    </>
+                  )}
+
+                  {req.status === "accepted" && (
+                    <Button
+                      size="sm"
+                      className="bg-primary text-white"
+                      onClick={() => handleStatusChange(req.id, "in_progress")}
+                    >
+                      Start Work
+                    </Button>
+                  )}
+
+                  {req.status === "in_progress" && (
                     <Button
                       size="sm"
                       className="bg-success text-white hover:bg-success/90"
-                      onClick={() => handleStatusChange(req.id, "accepted")}
+                      onClick={() => handleStatusChange(req.id, "completed")}
                     >
-                      <Check className="h-4 w-4 mr-1" />
-                      Accept Job
+                      Mark as Completed
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-error border-error/20 hover:bg-error-light/40"
-                      onClick={() => handleStatusChange(req.id, "rejected")}
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Decline
+                  )}
+
+                  <Link href="/dashboard/professional/requests">
+                    <Button variant="ghost" size="sm">
+                      View
                     </Button>
-                  </>
-                )}
-
-                {req.status === "accepted" && (
-                  <Button
-                    size="sm"
-                    className="bg-primary text-white"
-                    onClick={() => handleStatusChange(req.id, "in_progress")}
-                  >
-                    Start Work
-                  </Button>
-                )}
-
-                {req.status === "in_progress" && (
-                  <Button
-                    size="sm"
-                    className="bg-success text-white hover:bg-success/90"
-                    onClick={() => handleStatusChange(req.id, "completed")}
-                  >
-                    Mark as Completed
-                  </Button>
-                )}
-
-                <Link href="/dashboard/professional/requests">
-                  <Button variant="ghost" size="sm">
-                    View
-                  </Button>
-                </Link>
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

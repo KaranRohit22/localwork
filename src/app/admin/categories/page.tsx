@@ -1,49 +1,74 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { FormField } from "@/components/ui/form-field";
 import { Modal } from "@/components/ui/modal";
-import { mockCategories } from "@/lib/data/mock-data";
 import { ServiceCategory } from "@/types";
+import {
+  getAdminCategoriesAction,
+  addAdminCategoryAction,
+  toggleAdminCategoryStatusAction,
+} from "@/app/actions/admin";
 
 export default function AdminCategoriesPage() {
-  const [categories, setCategories] = useState<ServiceCategory[]>(mockCategories);
+  const [categories, setCategories] = useState<ServiceCategory[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [name, setName] = useState("");
   const [slug, setSlug] = useState("");
   const [description, setDescription] = useState("");
   const [icon, setIcon] = useState("Wrench");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const toggleCategoryStatus = (id: string) => {
-    setCategories((prev) =>
-      prev.map((c) => (c.id === id ? { ...c, is_active: !c.is_active } : c))
-    );
+  useEffect(() => {
+    let isMounted = true;
+    getAdminCategoriesAction().then((cats) => {
+      if (isMounted) {
+        setCategories(cats || []);
+      }
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshCategories = async () => {
+    const cats = await getAdminCategoriesAction();
+    setCategories(cats || []);
   };
 
-  const handleAddCategory = (e: React.FormEvent) => {
+  const toggleCategoryStatus = async (id: string, currentActive: boolean) => {
+    setCategories((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, is_active: !currentActive } : c))
+    );
+    await toggleAdminCategoryStatusAction(id);
+    refreshCategories();
+  };
+
+  const handleAddCategory = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
 
-    const newCategory: ServiceCategory = {
-      id: `cat-${Date.now()}`,
-      name: name.trim(),
-      slug: slug.trim() || name.toLowerCase().replace(/\s+/g, "-"),
-      description: description.trim() || null,
-      icon: icon || "Wrench",
-      is_active: true,
-      sort_order: categories.length + 1,
-      created_at: new Date().toISOString(),
-    };
+    setIsSubmitting(true);
+    try {
+      await addAdminCategoryAction({
+        name: name.trim(),
+        slug: slug.trim() || name.toLowerCase().replace(/\s+/g, "-"),
+        description: description.trim() || undefined,
+        icon: icon || "Wrench",
+      });
 
-    setCategories([...categories, newCategory]);
-    setName("");
-    setSlug("");
-    setDescription("");
-    setIsAddModalOpen(false);
+      setName("");
+      setSlug("");
+      setDescription("");
+      setIsAddModalOpen(false);
+      await refreshCategories();
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -104,7 +129,7 @@ export default function AdminCategoriesPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => toggleCategoryStatus(cat.id)}
+                      onClick={() => toggleCategoryStatus(cat.id, cat.is_active)}
                     >
                       {cat.is_active ? "Deactivate" : "Activate"}
                     </Button>
@@ -172,8 +197,8 @@ export default function AdminCategoriesPage() {
             >
               Cancel
             </Button>
-            <Button type="submit" size="sm">
-              Create Category
+            <Button type="submit" size="sm" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Category"}
             </Button>
           </div>
         </form>
